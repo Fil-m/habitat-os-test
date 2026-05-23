@@ -177,9 +177,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .editor-palette .p-color{width:100%;aspect-ratio:1;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all .15s}
 .editor-palette .p-color.active{border-color:var(--neon);transform:scale(1.1);box-shadow:0 0 12px rgba(0,240,255,0.4)}
 .editor-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.editor-layers{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
-.editor-layers .layer-btn{padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--text3);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;font-family:var(--font)}
-.editor-layers .layer-btn.active{border-color:var(--neon);background:var(--surface2);color:var(--neon);box-shadow:0 0 10px rgba(0,240,255,0.2)}
 .editor-stats{font-family:var(--mono);font-size:13px;color:var(--text2);text-align:center}
 .editor-cost-stats{font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;margin:4px 16px}
 .lt-options{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:4px}
@@ -379,11 +376,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="shop-name">Ruby Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Ruby</div>
         </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-small btn-primary" onclick="buyCanvas('ruby','gem')">🎨 20🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('ruby','bg')">🖼 15🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('ruby','frame')">⊞ 15🪙</button>
-        </div>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('ruby')">🎨 20🪙</button>
       </div>
       <div class="shop-item" data-game="match3">
         <div class="shop-icon">🔵</div>
@@ -391,11 +384,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="shop-name">Sapphire Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Sapphire</div>
         </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-small btn-primary" onclick="buyCanvas('sapphire','gem')">🎨 20🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('sapphire','bg')">🖼 15🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('sapphire','frame')">⊞ 15🪙</button>
-        </div>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('sapphire')">🎨 20🪙</button>
       </div>
       <div class="shop-item" data-game="match3">
         <div class="shop-icon">🟡</div>
@@ -403,11 +392,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="shop-name">Gold Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Gold</div>
         </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-small btn-primary" onclick="buyCanvas('gold','gem')">🎨 20🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('gold','bg')">🖼 15🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('gold','frame')">⊞ 15🪙</button>
-        </div>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('gold')">🎨 20🪙</button>
       </div>
       <div class="shop-item" data-game="match3">
         <div class="shop-icon">🟢</div>
@@ -415,11 +400,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="shop-name">Emerald Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Emerald</div>
         </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-small btn-primary" onclick="buyCanvas('emerald','gem')">🎨 20🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('emerald','bg')">🖼 15🪙</button>
-          <button class="btn btn-small btn-secondary" onclick="buyCanvas('emerald','frame')">⊞ 15🪙</button>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('emerald')">🎨 20🪙</button>
+      </div>
+    </div>
+    <div class="shop-category" data-game="match3">🖼 Скіни столу</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">🖼</div>
+        <div class="shop-info">
+          <div class="shop-name">Board BG Canvas — 32×32</div>
+          <div class="shop-desc">Фон для всієї дошки Match-3</div>
         </div>
+        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_bg')">🖼 25🪙</button>
+      </div>
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">⊞</div>
+        <div class="shop-info">
+          <div class="shop-name">Board Frame Canvas — 32×32</div>
+          <div class="shop-desc">Рамка навколо дошки Match-3</div>
+        </div>
+        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_frame')">⊞ 25🪙</button>
       </div>
     </div>
     <div class="shop-category" data-game="match3">⚡ Покращення Match-3</div>
@@ -730,11 +730,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           </div>
           <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
         </div>
-        <div class="editor-layers" id="editor-layers">
-          <button class="layer-btn active" data-layer="gem" onclick="setEditorLayer('gem')">🎨 Камінець</button>
-          <button class="layer-btn" data-layer="frame" onclick="setEditorLayer('frame')">⊞ Рамка</button>
-          <button class="layer-btn" data-layer="bg" onclick="setEditorLayer('bg')">🖼 Фон</button>
-        </div>
+        <div class="editor-mode-info" id="editor-mode-info" style="font-size:12px;color:var(--text2);padding:4px 0;text-align:center">🎨 Режим: Скін камінця</div>
       </div>
     </div>
     <div style="margin:8px 16px">
@@ -868,7 +864,8 @@ const DEFAULT_SAVE = {
   packs: [],
   active_effects: {},
   player: {id:null, name:'Гравець', email:'', created:null},
-  github: {token:'', repo:'', connected:false}
+  github: {token:'', repo:'', connected:false},
+  board_skins: {bg: null, frame: null}
 };
 
 function loadSave(){
@@ -1097,6 +1094,34 @@ function renderBoard(){
   container.innerHTML='';
   const style = calcGridSize();
   container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
+  
+  // Apply board skin: background
+  const bs = SAVE.board_skins || {};
+  if(bs.bg && bs.bg.pixels && bs.bg.pixels.some(p=>p!==null)){
+    const bgUrl = renderPixelsToDataUrl(bs.bg.pixels, bs.bg.size || 32);
+    container.style.backgroundImage = 'url('+bgUrl+')';
+    container.style.backgroundSize = '100% 100%';
+    container.style.backgroundPosition = 'center';
+    container.style.backgroundRepeat = 'no-repeat';
+  }else{
+    container.style.backgroundImage = '';
+    container.style.backgroundSize = '';
+    container.style.backgroundRepeat = '';
+  }
+  
+  // Apply board skin: frame
+  if(bs.frame && bs.frame.pixels && bs.frame.pixels.some(p=>p!==null)){
+    const frameUrl = renderPixelsToDataUrl(bs.frame.pixels, bs.frame.size || 32);
+    container.style.borderImage = 'url('+frameUrl+') 4 fill stretch';
+    container.style.borderWidth = '6px';
+    container.style.borderStyle = 'solid';
+  }else{
+    container.style.borderImage = '';
+    container.style.borderWidth = '2px';
+    container.style.borderStyle = 'solid';
+    container.style.borderColor = 'var(--surface)';
+  }
+  
   const gemGlowActive = isEffectActive('gem_glow');
   for(let r=0;r<BOARD_SIZE;r++){
     for(let c=0;c<BOARD_SIZE;c++){
@@ -1114,43 +1139,18 @@ function renderBoard(){
       if(eqSkinId){
         const eqSkin = SAVE.inventory.skins.find(s=>s.id===eqSkinId);
         if(eqSkin && eqSkin.pixels && eqSkin.pixels.some(p=>p!==null)){
-          // Render pixel art from skin — check for multi-layer
-          const hasBg = eqSkin.bg_pixels && eqSkin.bg_pixels.some(p=>p!==null);
-          const hasFrame = eqSkin.frame_pixels && eqSkin.frame_pixels.some(p=>p!==null);
-          if(hasBg || hasFrame){
-            // Multi-layer: bg on cell, gem+frame composited on gem with clipPath
-            if(hasBg){
-              const bgUrl = renderPixelsToDataUrl(eqSkin.bg_pixels, eqSkin.size || 16);
-              cell.style.backgroundImage = 'url('+bgUrl+')';
-              cell.style.backgroundSize = '100% 100%';
-              cell.style.backgroundPosition = 'center';
-              cell.style.backgroundRepeat = 'no-repeat';
-            }
-            const compositeUrl = renderGemCompositeDataUrl(eqSkin, gt);
-            gem.className = 'gem';
-            gem.style.backgroundImage = 'url('+compositeUrl+')';
-            gem.style.backgroundSize = '100% 100%';
-            gem.style.backgroundPosition = 'center';
-            gem.style.backgroundRepeat = 'no-repeat';
-            gem.style.borderRadius = '0';
-            gem.style.clipPath = getGemClipPath(gt);
-            gem.style.border = 'none';
-            gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
-            skinApplied = true;
-          }else{
-            // Single layer (gem only) — original rendering
-            const dataUrl = renderPixelsToDataUrl(eqSkin.pixels, eqSkin.size || 16);
-            gem.className = 'gem';
-            gem.style.backgroundImage = 'url('+dataUrl+')';
-            gem.style.backgroundSize = '100% 100%';
-            gem.style.backgroundPosition = 'center';
-            gem.style.backgroundRepeat = 'no-repeat';
-            gem.style.borderRadius = '0';
-            gem.style.clipPath = 'none';
-            gem.style.border = 'none';
-            gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
-            skinApplied = true;
-          }
+          // Single layer (gem only)
+          const dataUrl = renderPixelsToDataUrl(eqSkin.pixels, eqSkin.size || 16);
+          gem.className = 'gem';
+          gem.style.backgroundImage = 'url('+dataUrl+')';
+          gem.style.backgroundSize = '100% 100%';
+          gem.style.backgroundPosition = 'center';
+          gem.style.backgroundRepeat = 'no-repeat';
+          gem.style.borderRadius = '0';
+          gem.style.clipPath = 'none';
+          gem.style.border = 'none';
+          gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
+          skinApplied = true;
         }else if(eqSkin && eqSkin.color_override){
           gem.className = 'gem';
           gem.style.background = eqSkin.color_override;
@@ -1528,10 +1528,10 @@ function applyShopFilter(){
 
 // ===== CANVAS TYPES FOR SKIN EDITOR =====
 const CANVAS_TYPES = {
-  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby', layer_prices:{gem:20, bg:15, frame:15}},
-  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire', layer_prices:{gem:20, bg:15, frame:15}},
-  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold', layer_prices:{gem:20, bg:15, frame:15}},
-  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald', layer_prices:{gem:20, bg:15, frame:15}},
+  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby'},
+  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire'},
+  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold'},
+  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
 };
 
 // ===== SHOP FUNCTIONS =====
@@ -1585,35 +1585,55 @@ function updateAchieveList(){
 }
 
 // ===== CANVAS SHOP =====
-function buyCanvas(type, layer){
-  layer = layer || 'gem';
+function buyCanvas(type){
   const ct = CANVAS_TYPES[type];
   if(!ct){ toast('❌ Невідомий тип холста'); return; }
-  const price = (ct.layer_prices && ct.layer_prices[layer]) || ct.price;
+  const price = ct.price;
   if(SAVE.resources.gold < price){
     toast('❌ Недостатньо Gold! Потрібно '+price+' 🪙');
     return;
   }
   if(!Array.isArray(SAVE.inventory.canvases)) SAVE.inventory.canvases = [];
-  // Check if already have an unused canvas of this type+layer
-  const existing = SAVE.inventory.canvases.find(c=>c.type===type && c.layer===layer);
+  // Check if already have an unused canvas of this type
+  const existing = SAVE.inventory.canvases.find(c=>c.type===type);
   if(existing){
-    toast('ℹ️ У вас вже є невикористаний '+ct.name+' ('+layerLabel(layer)+')');
+    toast('ℹ️ У вас вже є невикористаний '+ct.name);
     return;
   }
   SAVE.resources.gold -= price;
   const newCanvas = {
     id: 'cv_'+Date.now(),
     type: type,
-    layer: layer,
+    layer: 'gem',
     purchased: Date.now()
   };
   SAVE.inventory.canvases.push(newCanvas);
   const canvasIdx = SAVE.inventory.canvases.length - 1;
   saveToDisk();
   updateUI();
-  if(confirm('✅ '+ct.name+' ('+layerLabel(layer)+') придбано! Відкрити редактор?')){
+  if(confirm('✅ '+ct.name+' придбано! Відкрити редактор?')){
     openSkinEditor(type, canvasIdx);
+  }
+}
+
+// ===== BOARD CANVAS SHOP =====
+function buyBoardCanvas(skinType){
+  if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
+  const defs = {
+    board_bg: {name:'Board BG Canvas', icon:'🖼', price:25, size:32},
+    board_frame: {name:'Board Frame Canvas', icon:'⊞', price:25, size:32}
+  };
+  const def = defs[skinType];
+  if(!def){ toast('❌ Невідомий тип'); return; }
+  if(SAVE.resources.gold < def.price){
+    toast('❌ Недостатньо Gold! Потрібно '+def.price+' 🪙');
+    return;
+  }
+  SAVE.resources.gold -= def.price;
+  saveToDisk();
+  updateUI();
+  if(confirm('✅ '+def.name+' придбано! Відкрити редактор?')){
+    openBoardSkinEditor(skinType);
   }
 }
 
@@ -1717,33 +1737,28 @@ const PALETTE_COLORS = [
 ];
 let editorColor = '#ff4466';
 let editorPixels = [];
-let editorBgPixels = [];
-let editorFramePixels = [];
 let editorSize = 16;
 let editorGemType = null;
 let editorDirty = false;
 let editorInitialized = false;
 let editorActiveLayer = 'gem';
+let editorMode = 'gem'; // 'gem' | 'board_bg' | 'board_frame'
+let editorBoardSkinType = null; // 'board_bg' or 'board_frame' when editing board skins
 let editorEditingSkinId = null; // null = new skin, string = editing existing skin
 let editorCanvasIdx = -1; // index in SAVE.inventory.canvases for new skins
 let editorTool = 'pen'; // 'pen' or 'eraser'
 let editorPixelTimestamps = []; // timestamps for each pixel in editorPixels
 let editorPixelLifetimes = [];  // lifetime ms for each pixel
-let editorBgPixelLifetimes = [];
-let editorFramePixelLifetimes = [];
 let editorPixelLifetime = 24 * 60 * 60 * 1000; // 24 hours (default)
 let editorPixelCost = 3; // current cost per pixel
 let editorNewPixelsCount = 0; // pixels painted in this session
 let editorSessionCost = 0; // total pixel-hours cost accrued this session
 
 function openSkinEditor(gemType, canvasIndex){
-  let canvasLayer = 'gem';
+  editorMode = 'gem';
+  editorBoardSkinType = null;
   if(typeof canvasIndex === 'number' && canvasIndex >= 0){
     editorCanvasIdx = canvasIndex;
-    // Read layer from canvas if available
-    const canvases = SAVE.inventory.canvases || [];
-    const cv = canvases[canvasIndex];
-    if(cv && cv.layer) canvasLayer = cv.layer;
   } else {
     editorCanvasIdx = -1;
   }
@@ -1758,34 +1773,57 @@ function openSkinEditor(gemType, canvasIndex){
   editorGemType = gemType;
   editorSize = 16;
   editorPixels = new Array(256).fill(null);
-  editorBgPixels = new Array(256).fill(null);
-  editorFramePixels = new Array(256).fill(null);
   editorPixelTimestamps = new Array(256).fill(null);
   editorPixelLifetimes = new Array(256).fill(null);
   editorPixelLifetime = PIXEL_LIFETIME_MS;
   editorPixelCost = 3;
   editorNewPixelsCount = 0;
   editorSessionCost = 0;
-  editorActiveLayer = canvasLayer;
+  editorActiveLayer = 'gem';
   editorDirty = false;
   editorTool = 'pen';
   editorInitialized = false;
-  // Build lifetime selector UI (async-safe: DOM may not exist yet, will build on init)
+  updateEditorModeInfo();
   setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
   showScreen('skineditor');
+}
+
+// ===== OPEN BOARD SKIN EDITOR =====
+function openBoardSkinEditor(skinType){
+  editorMode = skinType; // 'board_bg' or 'board_frame'
+  editorBoardSkinType = skinType;
+  editorEditingSkinId = null;
+  editorCanvasIdx = -1;
+  editorGemType = null;
+  editorSize = 32;
+  editorPixels = new Array(1024).fill(null);
+  editorPixelTimestamps = new Array(1024).fill(null);
+  editorPixelLifetimes = new Array(1024).fill(null);
+  editorPixelLifetime = PIXEL_LIFETIME_MS;
+  editorPixelCost = 3;
+  editorNewPixelsCount = 0;
+  editorSessionCost = 0;
+  editorActiveLayer = 'gem';
+  editorDirty = false;
+  editorTool = 'pen';
+  editorInitialized = false;
+  updateEditorModeInfo();
+  setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
+  showScreen('skineditor');
+  toast('🎨 Малюйте '+ (skinType==='board_bg' ? 'фон дошки' : 'рамку дошки') +' (32×32)');
 }
 
 // ===== OPEN EXISTING SKIN FOR EDITING =====
 function openExistingSkin(skinId){
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
+  editorMode = 'gem';
+  editorBoardSkinType = null;
   editorEditingSkinId = skinId;
   editorCanvasIdx = -1;
   editorGemType = skin.gem_type || skin.type || 'ruby';
   editorSize = skin.size || 16;
   editorPixels = skin.pixels ? [...skin.pixels] : new Array(256).fill(null);
-  editorBgPixels = skin.bg_pixels ? [...skin.bg_pixels] : new Array(256).fill(null);
-  editorFramePixels = skin.frame_pixels ? [...skin.frame_pixels] : new Array(256).fill(null);
   // Load pixel timestamps or initialize
   if(skin.pixel_ts && Array.isArray(skin.pixel_ts)){
     editorPixelTimestamps = [...skin.pixel_ts];
@@ -1806,16 +1844,6 @@ function openExistingSkin(skinId){
       if(editorPixels[i]!==null) editorPixelLifetimes[i] = PIXEL_LIFETIME_MS;
     }
   }
-  if(skin.bg_pixel_lt && Array.isArray(skin.bg_pixel_lt)){
-    editorBgPixelLifetimes = [...skin.bg_pixel_lt];
-  }else{
-    editorBgPixelLifetimes = new Array(256).fill(null);
-  }
-  if(skin.frame_pixel_lt && Array.isArray(skin.frame_pixel_lt)){
-    editorFramePixelLifetimes = [...skin.frame_pixel_lt];
-  }else{
-    editorFramePixelLifetimes = new Array(256).fill(null);
-  }
   editorPixelLifetime = PIXEL_LIFETIME_MS;
   editorPixelCost = 3;
   editorNewPixelsCount = 0;
@@ -1824,6 +1852,7 @@ function openExistingSkin(skinId){
   editorDirty = false;
   editorTool = 'pen';
   editorInitialized = false;
+  updateEditorModeInfo();
   setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
   showScreen('skineditor');
   toast('✏️ Редагування: "'+skin.name+'"');
@@ -1910,8 +1939,6 @@ function setupCanvasDrawing(){
   }
 
   function getActivePixels(){
-    if(editorActiveLayer === 'bg') return editorBgPixels;
-    if(editorActiveLayer === 'frame') return editorFramePixels;
     return editorPixels;
   }
 
@@ -1920,15 +1947,11 @@ function setupCanvasDrawing(){
     const pixels = getActivePixels();
     const isNewPixel = pixels[idx] === null;
     pixels[idx] = editorColor;
-    // Record timestamp and lifetime for painted pixel (all layers)
+    // Record timestamp and lifetime for painted pixel
     const now = Date.now();
-    if(editorActiveLayer === 'gem' && editorPixelTimestamps){
+    if(editorPixelTimestamps){
       editorPixelTimestamps[idx] = now;
       editorPixelLifetimes[idx] = editorPixelLifetime;
-    }else if(editorActiveLayer === 'bg' && editorBgPixelLifetimes){
-      editorBgPixelLifetimes[idx] = editorPixelLifetime;
-    }else if(editorActiveLayer === 'frame' && editorFramePixelLifetimes){
-      editorFramePixelLifetimes[idx] = editorPixelLifetime;
     }
     if(isNewPixel){
       editorNewPixelsCount++;
@@ -1948,13 +1971,9 @@ function setupCanvasDrawing(){
     if(pixels[idx]!==null){
       pixels[idx]=null;
       // Clear timestamp and lifetime
-      if(editorActiveLayer === 'gem' && editorPixelTimestamps){
+      if(editorPixelTimestamps){
         editorPixelTimestamps[idx] = null;
         editorPixelLifetimes[idx] = null;
-      }else if(editorActiveLayer === 'bg' && editorBgPixelLifetimes){
-        editorBgPixelLifetimes[idx] = null;
-      }else if(editorActiveLayer === 'frame' && editorFramePixelLifetimes){
-        editorFramePixelLifetimes[idx] = null;
       }
       if(editorNewPixelsCount > 0) editorNewPixelsCount--;
       editorDirty=true;
@@ -1985,16 +2004,8 @@ function drawSkinCanvas(){
   const size = editorSize;
   const total = size * size;
   const imageData = ctx.createImageData(size,size);
-  let pixels;
-  let useAging = false;
-  if(editorActiveLayer === 'bg'){
-    pixels = editorBgPixels;
-  }else if(editorActiveLayer === 'frame'){
-    pixels = editorFramePixels;
-  }else{
-    pixels = editorPixels;
-    useAging = true;
-  }
+  const pixels = editorPixels;
+  const useAging = true;
   for(let i=0;i<total;i++){
     const color = pixels[i];
     let r,g,b;
@@ -2031,18 +2042,27 @@ function drawSkinCanvas(){
 }
 
 function setEditorLayer(layer){
-  editorActiveLayer = layer;
-  document.querySelectorAll('.layer-btn').forEach(b=>b.classList.toggle('active', b.dataset.layer===layer));
+  editorActiveLayer = 'gem';
   drawSkinCanvas();
   updateEditorStats();
 }
 
+function updateEditorModeInfo(){
+  const el = document.getElementById('editor-mode-info');
+  if(!el) return;
+  if(editorMode === 'board_bg'){
+    el.textContent = '🖼 Режим: Фон дошки (32×32)';
+  }else if(editorMode === 'board_frame'){
+    el.textContent = '⊞ Режим: Рамка дошки (32×32)';
+  }else{
+    el.textContent = '🎨 Режим: Скін камінця (16×16)';
+  }
+}
+
 function updateEditorStats(){
   const gemUsed = editorPixels.filter(p=>p!==null).length;
-  const bgUsed = editorBgPixels.filter(p=>p!==null).length;
-  const frameUsed = editorFramePixels.filter(p=>p!==null).length;
   const total = editorSize * editorSize;
-  const totalPainted = gemUsed + bgUsed + frameUsed;
+  const totalPainted = gemUsed;
   // Calculate pixel age info
   let ageStr = '';
   let deadCount = 0;
@@ -2087,10 +2107,10 @@ function updateEditorStats(){
 }
 
 function clearSkinCanvas(){
-  if(!confirm('Очистити активний шар?')) return;
-  const pixels = (editorActiveLayer === 'bg') ? editorBgPixels : (editorActiveLayer === 'frame') ? editorFramePixels : editorPixels;
-  const tsArr = (editorActiveLayer === 'bg') ? null : (editorActiveLayer === 'frame') ? null : editorPixelTimestamps;
-  const ltArr = (editorActiveLayer === 'bg') ? editorBgPixelLifetimes : (editorActiveLayer === 'frame') ? editorFramePixelLifetimes : editorPixelLifetimes;
+  if(!confirm('Очистити скін?')) return;
+  const pixels = editorPixels;
+  const tsArr = editorPixelTimestamps;
+  const ltArr = editorPixelLifetimes;
   for(let i=0;i<pixels.length;i++){
     pixels[i]=null;
     if(tsArr) tsArr[i] = null;
@@ -2103,13 +2123,38 @@ function clearSkinCanvas(){
 }
 
 function saveSkinFromEditor(){
-  const gemUsed = editorPixels.filter(p=>p!==null).length;
-  const bgUsed = editorBgPixels.filter(p=>p!==null).length;
-  const frameUsed = editorFramePixels.filter(p=>p!==null).length;
-  if(gemUsed===0 && bgUsed===0 && frameUsed===0){
-    toast('❌ Скін порожній! Намалюйте щось хоча б на одному шарі.');
+  const used = editorPixels.filter(p=>p!==null).length;
+  if(used===0){
+    toast('❌ Скін порожній! Намалюйте щось.');
     return;
   }
+
+  // === BOARD SKIN SAVING ===
+  if(editorMode === 'board_bg' || editorMode === 'board_frame'){
+    if(!confirm('Зберегти '+(editorMode==='board_bg'?'фон дошки':'рамку дошки')+'?')) return;
+    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
+    const key = editorMode === 'board_bg' ? 'bg' : 'frame';
+    const skinId = 'board_'+key+'_'+Date.now();
+    const boardSkin = {
+      id: skinId,
+      name: (editorMode==='board_bg'?'Board BG':'Board Frame')+' #'+(SAVE.inventory.skins.length+1),
+      type: editorMode,
+      size: editorSize,
+      pixels: [...editorPixels],
+      pixel_ts: [...editorPixelTimestamps],
+      pixel_lt: [...editorPixelLifetimes],
+      created: new Date().toISOString().split('T')[0],
+      updated: new Date().toISOString().split('T')[0]
+    };
+    SAVE.board_skins[key] = boardSkin;
+    saveToDisk();
+    updateUI();
+    toast('💾 '+(editorMode==='board_bg'?'Фон дошки':'Рамку дошки')+' збережено!');
+    closeEditorAndGoBack();
+    return;
+  }
+
+  // === GEM SKIN SAVING ===
   if(!editorGemType){
     toast('❌ Помилка: тип камінця не обрано');
     return;
@@ -2141,13 +2186,13 @@ function saveSkinFromEditor(){
 
     // Update existing skin
     existing.pixels = [...editorPixels];
-    existing.bg_pixels = bgUsed > 0 ? [...editorBgPixels] : null;
-    existing.frame_pixels = frameUsed > 0 ? [...editorFramePixels] : null;
+    existing.bg_pixels = null;
+    existing.frame_pixels = null;
     // Save pixel timestamps
     existing.pixel_ts = [...editorPixelTimestamps];
     existing.pixel_lt = [...editorPixelLifetimes];
-    existing.bg_pixel_lt = bgUsed > 0 ? [...editorBgPixelLifetimes] : null;
-    existing.frame_pixel_lt = frameUsed > 0 ? [...editorFramePixelLifetimes] : null;
+    existing.bg_pixel_lt = null;
+    existing.frame_pixel_lt = null;
     existing.updated = new Date().toISOString().split('T')[0];
 
     saveToDisk();
@@ -2182,7 +2227,7 @@ function saveSkinFromEditor(){
   if(!skinName) return;
 
   // Count all filled pixels and calculate cost
-  const filledCount = gemUsed + bgUsed + frameUsed;
+  const filledCount = used;
   const cost = filledCount * editorPixelCost;
   if(cost > 0 && SAVE.resources.pixel_hours < cost){
     toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.pixel_hours);
@@ -2201,12 +2246,12 @@ function saveSkinFromEditor(){
     gem_type: editorGemType,
     size: editorSize,
     pixels: [...editorPixels],
-    bg_pixels: bgUsed > 0 ? [...editorBgPixels] : null,
-    frame_pixels: frameUsed > 0 ? [...editorFramePixels] : null,
+    bg_pixels: null,
+    frame_pixels: null,
     pixel_ts: [...editorPixelTimestamps],
     pixel_lt: [...editorPixelLifetimes],
-    bg_pixel_lt: bgUsed > 0 ? [...editorBgPixelLifetimes] : null,
-    frame_pixel_lt: frameUsed > 0 ? [...editorFramePixelLifetimes] : null,
+    bg_pixel_lt: null,
+    frame_pixel_lt: null,
     created: today,
     updated: today
   };
@@ -2230,14 +2275,12 @@ function updateAchieveCanvasList(){
   }
   const ctIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
   const ctNames = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
-  const layerNames = {gem:'🎨 Камінець', bg:'🖼 Фон', frame:'⊞ Рамка'};
   let html = '';
   for(let i=0;i<canvases.length;i++){
     const c = canvases[i];
-    const layerName = layerNames[c.layer] || '🎨';
     html += `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;margin:4px 0;background:var(--surface2);border-radius:var(--radius-sm)">
-        <span>${ctIcons[c.type]||'🎨'} ${ctNames[c.type]||c.type} <span style="font-size:11px;color:var(--text2)">(${layerName})</span></span>
+        <span>${ctIcons[c.type]||'🎨'} ${ctNames[c.type]||c.type}</span>
         <button class="btn btn-small btn-primary" onclick="openSkinEditor('${c.type}',${i})">🎨 Малювати</button>
       </div>`;
   }
@@ -2271,15 +2314,11 @@ function updateSkinList(){
         <div style="display:flex;align-items:center;gap:10px">
           <div style="display:flex;gap:4px;flex-shrink:0">
             <div><div style="font-size:9px;color:var(--text3);text-align:center;margin-bottom:2px">🎨</div><canvas id="inv-skin-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas></div>
-            ${(s.bg_pixels && s.bg_pixels.some(p=>p!==null)) ? `<div><div style="font-size:9px;color:var(--text3);text-align:center;margin-bottom:2px">🖼</div><canvas id="inv-skin-bg-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas></div>` : ''}
-            ${(s.frame_pixels && s.frame_pixels.some(p=>p!==null)) ? `<div><div style="font-size:9px;color:var(--text3);text-align:center;margin-bottom:2px">⊞</div><canvas id="inv-skin-fr-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas></div>` : ''}
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
             <div style="font-size:11px;color:var(--text2)">${s.color_override ? '🎨 '+s.color_override : ''}
               ${s.pixels&&s.pixels.some(p=>p!==null)?'🎨'+s.pixels.filter(p=>p!==null).length:'🎨0'}
-              ${s.bg_pixels&&s.bg_pixels.some(p=>p!==null)?' · 🖼'+s.bg_pixels.filter(p=>p!==null).length:''}
-              ${s.frame_pixels&&s.frame_pixels.some(p=>p!==null)?' · ⊞'+s.frame_pixels.filter(p=>p!==null).length:''}
             </div>
             <div style="font-size:10px;color:var(--text3)">📅 ${s.created||'—'} ${getSkinAgeStr(s)}</div>
           </div>
@@ -2331,45 +2370,103 @@ function updateSkinList(){
           }
           ctx.putImageData(imageData,0,0);
         }
-        // Background layer
-        const bgCanvas = document.getElementById('inv-skin-bg-'+gt+'-'+i);
-        if(bgCanvas && s.bg_pixels){
-          const ctx = bgCanvas.getContext('2d');
-          const imageData = ctx.createImageData(sz, sz);
-          for(let p=0;p<total;p++){
-            const color = s.bg_pixels[p] ? getPixelColorWithAge(s.bg_pixels[p], p, s.bg_pixel_ts || s.pixel_ts, s.bg_pixel_lt || s.pixel_lt) : '#1a1d33';
-            let r,g,b;
-            if(color.startsWith('rgb(')){
-              const m = color.match(/(\d+)/g);
-              r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-            }else{
-              [r,g,b] = hexToRgb(color);
-            }
-            imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
-          }
-          ctx.putImageData(imageData,0,0);
-        }
-        // Frame layer
-        const frCanvas = document.getElementById('inv-skin-fr-'+gt+'-'+i);
-        if(frCanvas && s.frame_pixels){
-          const ctx = frCanvas.getContext('2d');
-          const imageData = ctx.createImageData(sz, sz);
-          for(let p=0;p<total;p++){
-            const color = s.frame_pixels[p] ? getPixelColorWithAge(s.frame_pixels[p], p, s.frame_pixel_ts || s.pixel_ts, s.frame_pixel_lt || s.pixel_lt) : '#1a1d33';
-            let r,g,b;
-            if(color.startsWith('rgb(')){
-              const m = color.match(/(\d+)/g);
-              r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-            }else{
-              [r,g,b] = hexToRgb(color);
-            }
-            imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
-          }
-          ctx.putImageData(imageData,0,0);
-        }
       }
     }
   },50);
+  
+  // Render board skins section
+  const boardContainer = document.createElement('div');
+  boardContainer.id = 'board-skins-section';
+  const bs = SAVE.board_skins || {};
+  let boardHtml = '';
+  if(bs.bg || bs.frame){
+    boardHtml += '<div style="margin:12px 0 4px;font-size:13px;font-weight:700;color:var(--neon)">🖼 Скіни столу</div>';
+    if(bs.bg){
+      const sz = bs.bg.size || 32;
+      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <canvas id="board-skin-bg-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">🖼 Фон дошки</div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${bs.bg.created||'—'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-small btn-success" onclick="equipBoardSkin('bg')" style="flex:1">🎨 Як фон дошки</button>
+          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_bg')" style="flex:0">✏️</button>
+          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('bg')" style="flex:0">🗑</button>
+        </div>
+      </div>`;
+    }
+    if(bs.frame){
+      const sz = bs.frame.size || 32;
+      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <canvas id="board-skin-frame-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">⊞ Рамка дошки</div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${bs.frame.created||'—'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-small btn-success" onclick="equipBoardSkin('frame')" style="flex:1">⊞ Як рамку дошки</button>
+          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_frame')" style="flex:0">✏️</button>
+          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('frame')" style="flex:0">🗑</button>
+        </div>
+      </div>`;
+    }
+  }
+  boardContainer.innerHTML = boardHtml;
+  if(boardHtml) container.parentNode.insertBefore(boardContainer, container.nextSibling);
+  
+  // Render board skin previews
+  if(bs.bg){
+    const bgCanvas = document.getElementById('board-skin-bg-preview');
+    if(bgCanvas){
+      const ctx = bgCanvas.getContext('2d');
+      const sz = bs.bg.size || 32;
+      const imageData = ctx.createImageData(sz, sz);
+      for(let p=0;p<sz*sz;p++){
+        const color = bs.bg.pixels[p] || '#1a1d33';
+        const [r,g,b] = hexToRgb(color);
+        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+      }
+      ctx.putImageData(imageData,0,0);
+    }
+  }
+  if(bs.frame){
+    const frCanvas = document.getElementById('board-skin-frame-preview');
+    if(frCanvas){
+      const ctx = frCanvas.getContext('2d');
+      const sz = bs.frame.size || 32;
+      const imageData = ctx.createImageData(sz, sz);
+      for(let p=0;p<sz*sz;p++){
+        const color = bs.frame.pixels[p] || '#1a1d33';
+        const [r,g,b] = hexToRgb(color);
+        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+      }
+      ctx.putImageData(imageData,0,0);
+    }
+  }
+}
+
+// ===== BOARD SKIN EQUIP =====
+function equipBoardSkin(key){
+  const bs = SAVE.board_skins || {};
+  if(!bs[key]){ toast('❌ Немає скіна для цього типу'); return; }
+  toast('✅ Скін встановлено: '+(key==='bg'?'🖼 Фон дошки':'⊞ Рамка дошки'));
+  saveToDisk();
+  updateUI();
+}
+
+function removeBoardSkin(key){
+  const bs = SAVE.board_skins || {};
+  if(!bs[key]){ toast('❌ Немає скіна'); return; }
+  if(!confirm('Видалити '+(key==='bg'?'фон дошки':'рамку дошки')+'?')) return;
+  delete bs[key];
+  saveToDisk();
+  updateUI();
+  toast('🗑 Скін видалено');
 }
 
 function equipSkinById(skinId, gemType){
@@ -2396,10 +2493,7 @@ function unequipSkinByType(gemType){
 function sellSkinById(skinId){
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
-  const gemUsed = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
-  const bgUsed = skin.bg_pixels ? skin.bg_pixels.filter(p=>p!==null).length : 0;
-  const frameUsed = skin.frame_pixels ? skin.frame_pixels.filter(p=>p!==null).length : 0;
-  const totalUsed = gemUsed + bgUsed + frameUsed;
+  const totalUsed = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
   const price = Math.max(1, totalUsed * 2);
   if(!confirm('Продати "'+skin.name+'" за '+price+' 🪙? ('+totalUsed+' пікселів)')) return;
   SAVE.resources.gold += price;
