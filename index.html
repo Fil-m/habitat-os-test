@@ -267,6 +267,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);max-width:360px;width:90%;background:var(--surface);border:1px solid var(--neon);border-radius:var(--radius);padding:12px 16px;font-size:13px;text-align:center;z-index:999;box-shadow:var(--shadow);animation:toastIn 0.3s ease;pointer-events:none}
 .toast.hidden{display:none}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Profile */
+.profile-header{display:flex;align-items:center;gap:12px;padding:16px;margin:8px 16px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--surface2)}
+.profile-avatar{font-size:48px;width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:50%;border:2px solid var(--neon)}
+.profile-info{flex:1;min-width:0}
+.profile-info .profile-name{font-size:18px;font-weight:700;color:#fff}
+.profile-info .profile-id{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.profile-info .profile-email{font-size:12px;color:var(--text2);margin-top:2px}
+.profile-info .profile-date{font-size:11px;color:var(--text3);margin-top:1px}
+.profile-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.profile-stat-card{background:var(--surface);border-radius:var(--radius-sm);padding:12px;text-align:center;border:1px solid var(--surface2)}
+.profile-stat-card .pstat-icon{font-size:24px}
+.profile-stat-card .pstat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+.profile-stat-card .pstat-value{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--neon)}
+.profile-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.github-section{margin:8px 16px;padding:16px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--surface2)}
+.github-section .github-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.github-field{margin-bottom:8px}
+.github-field label{display:block;font-size:11px;color:var(--text3);margin-bottom:2px}
+.github-field input{width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--surface2);background:var(--bg3);color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border .2s}
+.github-field input:focus{border-color:var(--neon)}
 </style>
 </head>
 <body>
@@ -637,6 +658,77 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
   </div>
 
+  <!-- Profile Screen -->
+  <div id="screen-profile" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">👤 ПРОФІЛЬ</h1>
+      <div style="width:60px"></div>
+    </div>
+    <div class="profile-header">
+      <div class="profile-avatar">👤</div>
+      <div class="profile-info">
+        <div class="profile-name" id="profile-name-display">Гравець</div>
+        <div class="profile-id" id="profile-id-display">—</div>
+        <div class="profile-email" id="profile-email-display"></div>
+        <div class="profile-date" id="profile-date-display"></div>
+      </div>
+    </div>
+    <div class="profile-stat-grid">
+      <div class="profile-stat-card">
+        <div class="pstat-icon">🎮</div>
+        <div class="pstat-label">Матчів</div>
+        <div class="pstat-value" id="prof-stat-matches">0</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="pstat-icon">🪙</div>
+        <div class="pstat-label">Зароблено</div>
+        <div class="pstat-value" id="prof-stat-earned">0</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="pstat-icon">🎨</div>
+        <div class="pstat-label">Скінів створено</div>
+        <div class="pstat-value" id="prof-stat-skins">0</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="pstat-icon">💰</div>
+        <div class="pstat-label">Продано</div>
+        <div class="pstat-value" id="prof-stat-sold">0</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">✏️ Редагувати профіль</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="github-field">
+          <label>Ім'я гравця</label>
+          <input type="text" id="profile-name-input" placeholder="Ваше ім'я" maxlength="30" value="Гравець">
+        </div>
+        <div class="github-field">
+          <label>Email (опціонально)</label>
+          <input type="email" id="profile-email-input" placeholder="email@example.com">
+        </div>
+        <button class="btn btn-primary btn-block btn-small" onclick="saveProfile()">💾 Зберегти профіль</button>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="btn btn-success btn-block btn-small" onclick="exportSave()">💾 Експорт прогресу</button>
+      <button class="btn btn-secondary btn-block btn-small" onclick="importSave()">📂 Імпорт прогресу</button>
+    </div>
+    <div class="github-section">
+      <div class="github-title">🐙 GitHub Sync <span id="github-status" style="font-size:11px;text-transform:none;color:var(--text3)">· Не налаштовано</span></div>
+      <div class="github-field">
+        <label>GitHub Token</label>
+        <input type="password" id="github-token-input" placeholder="ghp_xxxxxxxxxxxx">
+      </div>
+      <div class="github-field">
+        <label>Repository (owner/repo)</label>
+        <input type="text" id="github-repo-input" placeholder="username/habitat-os-save">
+      </div>
+      <button class="btn btn-primary btn-block btn-small" onclick="saveGithubSettings()">💾 Зберегти налаштування</button>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
+  </div>
+
   <!-- Bottom Navigation -->
   <nav class="nav">
     <button class="nav-btn active" data-screen="dashboard" onclick="showScreen('dashboard')">
@@ -654,6 +746,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <button class="nav-btn" data-screen="chat" onclick="showScreen('chat')">
       <span class="icon">💬</span> Чат
     </button>
+    <button class="nav-btn" data-screen="profile" onclick="showScreen('profile')">
+      <span class="icon">👤</span> Профіль
+    </button>
   </nav>
 </div>
 
@@ -664,11 +759,13 @@ const DEFAULT_SAVE = {
   inventory: {canvases:[], skins:[], owned_achievements:[]},
   equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
   achievements: [],
-  stats: {matches:0, earned:0, record:0},
+  stats: {matches:0, earned:0, record:0, skins_created:0, skins_sold:0},
   chat: [],
   match3_state: {daily_matches:0},
   packs: [],
-  active_effects: {}
+  active_effects: {},
+  player: {id:null, name:'Гравець', email:'', created:null},
+  github: {token:'', repo:'', connected:false}
 };
 
 function loadSave(){
@@ -696,6 +793,15 @@ function loadSave(){
       if(typeof data.match3_state !== 'object') data.match3_state = {...DEFAULT_SAVE.match3_state};
       if(typeof data.match3_state.daily_matches !== 'number') data.match3_state.daily_matches = 0;
       if(!Array.isArray(data.packs)) data.packs = [];
+      if(typeof data.player !== 'object' || !data.player) data.player = {id:null, name:'Гравець', email:'', created:null};
+      if(typeof data.github !== 'object' || !data.github) data.github = {token:'', repo:'', connected:false};
+      if(typeof data.stats.skins_created !== 'number') data.stats.skins_created = 0;
+      if(typeof data.stats.skins_sold !== 'number') data.stats.skins_sold = 0;
+      // Generate player ID if missing
+      if(!data.player.id){
+        data.player.id = 'HAB-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+        data.player.created = new Date().toISOString();
+      }
       return data;
     }
   }catch(e){console.error('Save load error',e);}
@@ -779,6 +885,7 @@ function showScreen(id){
   }
   if(id==='chat') renderChat();
   if(id==='shop') renderShopPacks();
+  if(id==='profile') updateProfile();
   if(id==='achieve') {
     // Make sure all sections are rendered when switching to achievements
     updateAchieveCanvasList();
@@ -1704,6 +1811,7 @@ function saveSkinFromEditor(){
     created: today
   };
   SAVE.inventory.skins.push(skin);
+  SAVE.stats.skins_created = (SAVE.stats.skins_created || 0) + 1;
 
   // Remove the used canvas from inventory
   const idx = SAVE.inventory.canvases.indexOf(canvasObj);
@@ -1994,6 +2102,176 @@ function escapeHtml(str){
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ===== EXPORT / IMPORT PROGRESS =====
+function exportSave(){
+  const blob = new Blob([JSON.stringify(SAVE, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `habitat_os_save_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('✅ Прогрес експортовано');
+}
+
+function importSave(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        localStorage.setItem('habitat_os_save', JSON.stringify(data));
+        toast('✅ Прогрес завантажено! Сторінка перезавантажиться.');
+        setTimeout(() => location.reload(), 800);
+      } catch(e){
+        toast('❌ Помилка: некоректний файл');
+      }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+// ===== PROFILE =====
+function saveProfile(){
+  const nameInput = document.getElementById('profile-name-input');
+  const emailInput = document.getElementById('profile-email-input');
+  if(!nameInput) return;
+  const name = nameInput.value.trim() || 'Гравець';
+  const email = emailInput ? emailInput.value.trim() : '';
+  SAVE.player.name = name;
+  SAVE.player.email = email;
+  saveToDisk();
+  updateProfile();
+  toast('✅ Профіль збережено!');
+}
+
+function updateProfile(){
+  const p = SAVE.player;
+  const dnEl = document.getElementById('profile-name-display');
+  const diEl = document.getElementById('profile-id-display');
+  const deEl = document.getElementById('profile-email-display');
+  const ddEl = document.getElementById('profile-date-display');
+  const niEl = document.getElementById('profile-name-input');
+  const eiEl = document.getElementById('profile-email-input');
+  if(dnEl) dnEl.textContent = p.name || 'Гравець';
+  if(diEl) diEl.textContent = 'ID: ' + (p.id || '—');
+  if(deEl) deEl.textContent = p.email ? '📧 '+p.email : '';
+  if(ddEl) ddEl.textContent = p.created ? '📅 ' + new Date(p.created).toLocaleDateString('uk-UA', {year:'numeric',month:'long',day:'numeric'}) : '';
+  if(niEl) niEl.value = p.name || 'Гравець';
+  if(eiEl) eiEl.value = p.email || '';
+  // Stats
+  const s = SAVE.stats;
+  const smEl = document.getElementById('prof-stat-matches');
+  const seEl = document.getElementById('prof-stat-earned');
+  const ssEl = document.getElementById('prof-stat-skins');
+  const ssoEl = document.getElementById('prof-stat-sold');
+  if(smEl) smEl.textContent = s.matches || 0;
+  if(seEl) seEl.textContent = (s.earned || 0) + ' 🪙';
+  if(ssEl) ssEl.textContent = s.skins_created || 0;
+  if(ssoEl) ssoEl.textContent = s.skins_sold || 0;
+  updateGithubUI();
+}
+
+// ===== GITHUB SYNC =====
+function saveGithubSettings(){
+  const tokenInput = document.getElementById('github-token-input');
+  const repoInput = document.getElementById('github-repo-input');
+  if(!tokenInput || !repoInput) return;
+  const token = tokenInput.value.trim();
+  const repo = repoInput.value.trim();
+  SAVE.github.token = token;
+  SAVE.github.repo = repo;
+  SAVE.github.connected = !!(token && repo);
+  saveToDisk();
+  updateGithubUI();
+  toast('✅ Налаштування GitHub збережено!');
+}
+
+function updateGithubUI(){
+  const statusEl = document.getElementById('github-status');
+  const tokenInput = document.getElementById('github-token-input');
+  const repoInput = document.getElementById('github-repo-input');
+  if(!statusEl) return;
+  const g = SAVE.github || {};
+  if(g.connected && g.token && g.repo){
+    statusEl.innerHTML = '· <span style="color:var(--green)">✅ Підключено</span>';
+    statusEl.style.color = 'var(--green)';
+  } else if(g.token || g.repo){
+    statusEl.innerHTML = '· <span style="color:var(--gold)">⚠️ Неповне</span>';
+    statusEl.style.color = 'var(--gold)';
+  } else {
+    statusEl.innerHTML = '· Не налаштовано';
+    statusEl.style.color = 'var(--text3)';
+  }
+  if(tokenInput) tokenInput.value = g.token || '';
+  if(repoInput) repoInput.value = g.repo || '';
+}
+
+// ===== IMPROVED CHAT =====
+// Override renderChat to show date + player name
+const _origRenderChat = renderChat || function(){};
+function renderChat(){
+  const container = document.getElementById('chat-messages');
+  if(!SAVE.chat.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">💬</span>Ще немає повідомлень</div>';
+    return;
+  }
+  // Show last 30 messages
+  const msgs = SAVE.chat.slice(-30);
+  let html='';
+  for(const m of msgs){
+    const timeStr = m.time ? new Date(m.time).toLocaleString('uk-UA', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) : '';
+    html+=`<div class="chat-msg">
+      <div><span class="chat-hash">[${m.hash}]</span> <span class="chat-author">${escapeHtml(m.author)}</span> <span style="font-size:10px;color:var(--text3)">${timeStr}</span></div>
+      <div class="chat-text">${escapeHtml(m.text)}</div>`;
+    if(m.trade){
+      const action = m.trade.type==='sell'?'💰 Продає':'🛒 Купує';
+      html+=`<div class="chat-trade">
+        ${action} <strong>${escapeHtml(m.trade.item)}</strong> за ${m.trade.price} 🪙
+        <span class="trade-action" onclick="acceptTrade('${m.hash}')">[Прийняти]</span>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  container.innerHTML=html;
+  container.scrollTop = container.scrollHeight;
+}
+
+// Override sendChat to use player name
+const _origSendChat = sendChat || function(){};
+function sendChat(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text){
+    toast('❌ Введіть повідомлення');
+    return;
+  }
+  const hash = Math.random().toString(16).slice(2,10);
+  const playerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
+  const msg = {
+    hash: hash,
+    author: playerName,
+    text: text,
+    time: Date.now(),
+    trade: null
+  };
+  // Check for trade pattern
+  const tradeMatch = text.match(/^(sell|buy):(\w+):(\d+)$/i);
+  if(tradeMatch){
+    msg.trade = {
+      type: tradeMatch[1].toLowerCase(),
+      item: tradeMatch[2].toLowerCase(),
+      price: parseInt(tradeMatch[3])
+    };
+  }
+  SAVE.chat.push(msg);
+  saveToDisk();
+  input.value='';
+  renderChat();
 }
 
 // ===== RESIZE HANDLER =====
