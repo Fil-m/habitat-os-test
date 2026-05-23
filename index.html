@@ -181,6 +181,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .editor-layers .layer-btn{padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--text3);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;font-family:var(--font)}
 .editor-layers .layer-btn.active{border-color:var(--neon);background:var(--surface2);color:var(--neon);box-shadow:0 0 10px rgba(0,240,255,0.2)}
 .editor-stats{font-family:var(--mono);font-size:13px;color:var(--text2);text-align:center}
+.editor-cost-stats{font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;margin:4px 16px}
+.lt-options{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.lt-btn{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--text3);background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.lt-btn.active{border-color:var(--gold);background:var(--surface2);color:var(--gold);box-shadow:0 0 8px rgba(255,204,0,0.3)}
+.lt-btn .lt-cost{font-size:9px;color:var(--text3);display:block}
 
 /* Chat */
 .chat-messages{flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:6px;min-height:0}
@@ -733,9 +738,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <canvas id="skin-canvas" width="16" height="16"></canvas>
         </div>
         <div class="editor-palette" id="editor-palette"></div>
+        <div class="lt-options" id="lt-options"></div>
+        <div class="editor-cost-stats" id="editor-cost-stats">🆕 0 нових · 💰 0 px-год · ⌛ 24h</div>
         <div class="editor-tools">
           <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
-          Клік = 1 піксель-година · ПКМ = стерти
+          🖱 Клік = малювати · ПКМ = стерти
         </div>
         <div class="editor-layers" id="editor-layers">
           <button class="layer-btn active" data-layer="gem" onclick="setEditorLayer('gem')">🎨 Камінець</button>
@@ -1668,6 +1675,13 @@ let editorInitialized = false;
 let editorActiveLayer = 'gem';
 let editorEditingSkinId = null; // null = new skin, string = editing existing skin
 let editorPixelTimestamps = []; // timestamps for each pixel in editorPixels
+let editorPixelLifetimes = [];  // lifetime ms for each pixel
+let editorBgPixelLifetimes = [];
+let editorFramePixelLifetimes = [];
+let editorPixelLifetime = PIXEL_LIFETIME_MS; // current selected lifetime in ms
+let editorPixelCost = 3; // current cost per pixel
+let editorNewPixelsCount = 0; // pixels painted in this session
+let editorSessionCost = 0; // total pixel-hours cost accrued this session
 
 function openSkinEditor(gemType){
   const validTypes = ['ruby','sapphire','gold','emerald'];
@@ -1684,9 +1698,16 @@ function openSkinEditor(gemType){
   editorBgPixels = new Array(256).fill(null);
   editorFramePixels = new Array(256).fill(null);
   editorPixelTimestamps = new Array(256).fill(null);
+  editorPixelLifetimes = new Array(256).fill(null);
+  editorPixelLifetime = PIXEL_LIFETIME_MS;
+  editorPixelCost = 3;
+  editorNewPixelsCount = 0;
+  editorSessionCost = 0;
   editorActiveLayer = 'gem';
   editorDirty = false;
   editorInitialized = false;
+  // Build lifetime selector UI (async-safe: DOM may not exist yet, will build on init)
+  setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
   showScreen('skineditor');
 }
 
@@ -1711,9 +1732,33 @@ function openExistingSkin(skinId){
       if(editorPixels[i]!==null) editorPixelTimestamps[i] = now;
     }
   }
+  // Load pixel lifetimes
+  if(skin.pixel_lt && Array.isArray(skin.pixel_lt)){
+    editorPixelLifetimes = [...skin.pixel_lt];
+  }else{
+    editorPixelLifetimes = new Array(256).fill(null);
+    for(let i=0;i<256;i++){
+      if(editorPixels[i]!==null) editorPixelLifetimes[i] = PIXEL_LIFETIME_MS;
+    }
+  }
+  if(skin.bg_pixel_lt && Array.isArray(skin.bg_pixel_lt)){
+    editorBgPixelLifetimes = [...skin.bg_pixel_lt];
+  }else{
+    editorBgPixelLifetimes = new Array(256).fill(null);
+  }
+  if(skin.frame_pixel_lt && Array.isArray(skin.frame_pixel_lt)){
+    editorFramePixelLifetimes = [...skin.frame_pixel_lt];
+  }else{
+    editorFramePixelLifetimes = new Array(256).fill(null);
+  }
+  editorPixelLifetime = PIXEL_LIFETIME_MS;
+  editorPixelCost = 3;
+  editorNewPixelsCount = 0;
+  editorSessionCost = 0;
   editorActiveLayer = 'gem';
   editorDirty = false;
   editorInitialized = false;
+  setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
   showScreen('skineditor');
   toast('✏️ Редагування: "'+skin.name+'"');
 }
@@ -1725,6 +1770,7 @@ function initEditorCanvas(){
   canvasEl.width = editorSize;
   canvasEl.height = editorSize;
   buildPalette();
+  buildLifetimeOptions();
   drawSkinCanvas();
   setupCanvasDrawing();
   updateEditorStats();
@@ -1755,6 +1801,25 @@ function buildPalette(){
       div.classList.add('active');
     });
     container.appendChild(div);
+  }
+}
+
+function buildLifetimeOptions(){
+  const container = document.getElementById('lt-options');
+  if(!container) return;
+  container.innerHTML = '<span style="font-size:11px;color:var(--text3);margin-right:4px">⌛ Вік:</span>';
+  for(const opt of PIXEL_LIFETIME_OPTIONS){
+    const btn = document.createElement('button');
+    btn.className = 'lt-btn' + (opt.ms === editorPixelLifetime ? ' active' : '');
+    btn.innerHTML = `${opt.label} <span class="lt-cost">💰${opt.cost_per_pixel}</span>`;
+    btn.addEventListener('click', ()=>{
+      editorPixelLifetime = opt.ms;
+      editorPixelCost = opt.cost_per_pixel;
+      document.querySelectorAll('.lt-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      updateEditorStats();
+    });
+    container.appendChild(btn);
   }
 }
 
@@ -1789,10 +1854,19 @@ function setupCanvasDrawing(){
     const pixels = getActivePixels();
     const isNewPixel = pixels[idx] === null;
     pixels[idx] = editorColor;
-    // Record timestamp for new pixel
-    if(isNewPixel && editorActiveLayer === 'gem' && editorPixelTimestamps){
-      editorPixelTimestamps[idx] = Date.now();
+    // Record timestamp and lifetime for painted pixel (all layers)
+    const now = Date.now();
+    if(editorActiveLayer === 'gem' && editorPixelTimestamps){
+      editorPixelTimestamps[idx] = now;
+      editorPixelLifetimes[idx] = editorPixelLifetime;
+    }else if(editorActiveLayer === 'bg' && editorBgPixelLifetimes){
+      editorBgPixelLifetimes[idx] = editorPixelLifetime;
+    }else if(editorActiveLayer === 'frame' && editorFramePixelLifetimes){
+      editorFramePixelLifetimes[idx] = editorPixelLifetime;
     }
+    if(isNewPixel) editorNewPixelsCount++;
+    // Cost applies to ALL painted pixels (new + repaint)
+    editorSessionCost += editorPixelCost;
     editorDirty = true;
     drawSkinCanvas();
     updateEditorStats();
@@ -1803,10 +1877,16 @@ function setupCanvasDrawing(){
     const pixels = getActivePixels();
     if(pixels[idx]!==null){
       pixels[idx]=null;
-      // Clear timestamp
+      // Clear timestamp and lifetime
       if(editorActiveLayer === 'gem' && editorPixelTimestamps){
         editorPixelTimestamps[idx] = null;
+        editorPixelLifetimes[idx] = null;
+      }else if(editorActiveLayer === 'bg' && editorBgPixelLifetimes){
+        editorBgPixelLifetimes[idx] = null;
+      }else if(editorActiveLayer === 'frame' && editorFramePixelLifetimes){
+        editorFramePixelLifetimes[idx] = null;
       }
+      if(editorNewPixelsCount > 0) editorNewPixelsCount--;
       editorDirty=true;
       drawSkinCanvas();
       updateEditorStats();
@@ -1836,26 +1916,26 @@ function drawSkinCanvas(){
   const total = size * size;
   const imageData = ctx.createImageData(size,size);
   let pixels;
-  let usePixelTs = false;
+  let useAging = false;
   if(editorActiveLayer === 'bg'){
     pixels = editorBgPixels;
   }else if(editorActiveLayer === 'frame'){
     pixels = editorFramePixels;
   }else{
     pixels = editorPixels;
-    usePixelTs = true;
+    useAging = true;
   }
   for(let i=0;i<total;i++){
     const color = pixels[i];
     let r,g,b;
     if(color){
-      if(usePixelTs && editorPixelTimestamps && editorPixelTimestamps[i]){
-        const aged = getPixelColorWithAge(color, i, editorPixelTimestamps);
-        if(aged.startsWith('rgb(')){
+      if(useAging && editorPixelTimestamps && editorPixelTimestamps[i]){
+        const aged = getPixelColorWithAge(color, i, editorPixelTimestamps, editorPixelLifetimes);
+        if(aged && aged.startsWith('rgb(')){
           const m = aged.match(/(\d+)/g);
           r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
         }else{
-          [r,g,b] = hexToRgb(aged);
+          [r,g,b] = hexToRgb(aged || color);
         }
       }else{
         [r,g,b] = hexToRgb(color);
@@ -1892,25 +1972,57 @@ function updateEditorStats(){
   const bgUsed = editorBgPixels.filter(p=>p!==null).length;
   const frameUsed = editorFramePixels.filter(p=>p!==null).length;
   const total = editorSize * editorSize;
-  // Calculate skin age
+  const totalPainted = gemUsed + bgUsed + frameUsed;
+  // Calculate pixel age info
   let ageStr = '';
+  let deadCount = 0;
+  let fadingCount = 0;
   if(editorEditingSkinId){
     const skin = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
-    if(skin && skin.created){
-      const created = new Date(skin.created);
-      const hours = Math.floor((Date.now() - created.getTime()) / 3600000);
-      ageStr = hours < 1 ? '⏱ <1 год' : hours < 24 ? `⏱ ${hours} год` : `⏱ ${Math.floor(hours/24)} дн`;
+    if(skin){
+      // Count dead and fading gem pixels
+      for(let i=0;i<256;i++){
+        if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
+          const lt = editorPixelLifetimes[i] || PIXEL_LIFETIME_MS;
+          const age = Date.now() - editorPixelTimestamps[i];
+          if(age >= lt) deadCount++;
+          else if(age >= lt * 0.75) fadingCount++;
+        }
+      }
+      if(deadCount > 0){
+        ageStr = `💀 ${deadCount} мертвих`;
+      }else if(fadingCount > 0){
+        ageStr = `🌅 ${fadingCount} вицвітають`;
+      }else{
+        const now = Date.now();
+        let minAge = Infinity;
+        for(let i=0;i<256;i++){
+          if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
+            minAge = Math.min(minAge, Date.now() - editorPixelTimestamps[i]);
+          }
+        }
+        if(minAge < Infinity){
+          const hrs = Math.floor(minAge / 3600000);
+          ageStr = hrs < 1 ? '⏱ <1 год' : hrs < 24 ? `⏱ ${hrs} год` : `⏱ ${Math.floor(hrs/24)} дн`;
+        }
+      }
     }
   }
+  const lifetimeLabel = PIXEL_LIFETIME_OPTIONS.find(o => o.ms === editorPixelLifetime)?.label || '24h';
   document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}`;
   document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
+  document.getElementById('editor-cost-stats').innerHTML = `🆕 ${editorNewPixelsCount} нових · 💰 ${editorSessionCost} px-год · ⌛ ${lifetimeLabel}`;
 }
 
 function clearSkinCanvas(){
   if(!confirm('Очистити активний шар?')) return;
   const pixels = (editorActiveLayer === 'bg') ? editorBgPixels : (editorActiveLayer === 'frame') ? editorFramePixels : editorPixels;
+  const tsArr = (editorActiveLayer === 'bg') ? null : (editorActiveLayer === 'frame') ? null : editorPixelTimestamps;
+  const ltArr = (editorActiveLayer === 'bg') ? editorBgPixelLifetimes : (editorActiveLayer === 'frame') ? editorFramePixelLifetimes : editorPixelLifetimes;
   for(let i=0;i<pixels.length;i++){
     pixels[i]=null;
+    if(tsArr) tsArr[i] = null;
+    if(ltArr) ltArr[i] = null;
   }
   editorDirty=true;
   drawSkinCanvas();
@@ -1938,29 +2050,13 @@ function saveSkinFromEditor(){
     const existing = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
     if(!existing){ toast('❌ Скін не знайдено для редагування'); return; }
 
-    // Count new pixels (ones that were null in saved skin but are now colored)
-    const oldPixels = existing.pixels || [];
-    let newPixels = 0;
-    for(let i=0;i<256;i++){
-      if(editorPixels[i]!==null && (oldPixels[i]===null || oldPixels[i]===undefined)){
-        newPixels++;
-      }
-    }
-    // Also count bg and frame new pixels
-    const oldBg = existing.bg_pixels || [];
-    const oldFrame = existing.frame_pixels || [];
-    for(let i=0;i<256;i++){
-      if(editorBgPixels[i]!==null && (oldBg[i]===null || oldBg[i]===undefined)) newPixels++;
-      if(editorFramePixels[i]!==null && (oldFrame[i]===null || oldFrame[i]===undefined)) newPixels++;
-    }
-
-    // Deduct pixel-hours for new pixels
-    if(newPixels > 0){
-      if(SAVE.resources.pixel_hours < newPixels){
-        toast('❌ Недостатньо піксель-годин! Потрібно '+newPixels+', є '+SAVE.resources.pixel_hours);
+    // Deduct pixel-hours for all painted pixels in this session
+    if(editorSessionCost > 0){
+      if(SAVE.resources.pixel_hours < editorSessionCost){
+        toast('❌ Недостатньо піксель-годин! Потрібно '+editorSessionCost+', є '+SAVE.resources.pixel_hours);
         return;
       }
-      SAVE.resources.pixel_hours -= newPixels;
+      SAVE.resources.pixel_hours -= editorSessionCost;
     }
 
     // Update existing skin
@@ -1969,13 +2065,15 @@ function saveSkinFromEditor(){
     existing.frame_pixels = frameUsed > 0 ? [...editorFramePixels] : null;
     // Save pixel timestamps
     existing.pixel_ts = [...editorPixelTimestamps];
-    existing.age_hours = 0;
+    existing.pixel_lt = [...editorPixelLifetimes];
+    existing.bg_pixel_lt = bgUsed > 0 ? [...editorBgPixelLifetimes] : null;
+    existing.frame_pixel_lt = frameUsed > 0 ? [...editorFramePixelLifetimes] : null;
     existing.updated = new Date().toISOString().split('T')[0];
 
     saveToDisk();
     updateUI();
-    if(newPixels > 0){
-      toast('💾 Скін "'+existing.name+'" оновлено! (-'+newPixels+' px-год)');
+    if(editorSessionCost > 0){
+      toast('💾 Скін "'+existing.name+'" оновлено! (-'+editorSessionCost+' px-год)');
     }else{
       toast('💾 Скін "'+existing.name+'" оновлено!');
     }
@@ -1998,12 +2096,11 @@ function saveSkinFromEditor(){
   if(!skinName) return;
 
   // Count pixels to deduct pixel-hours
-  const totalNewPixels = gemUsed + bgUsed + frameUsed;
-  if(totalNewPixels > 0 && SAVE.resources.pixel_hours < totalNewPixels){
-    toast('❌ Недостатньо піксель-годин! Потрібно '+totalNewPixels+', є '+SAVE.resources.pixel_hours);
+  if(editorSessionCost > 0 && SAVE.resources.pixel_hours < editorSessionCost){
+    toast('❌ Недостатньо піксель-годин! Потрібно '+editorSessionCost+', є '+SAVE.resources.pixel_hours);
     return;
   }
-  SAVE.resources.pixel_hours -= totalNewPixels;
+  SAVE.resources.pixel_hours -= editorSessionCost;
 
   // Consume the canvas
   SAVE.inventory.canvases.splice(canvasIdx, 1);
@@ -2019,7 +2116,9 @@ function saveSkinFromEditor(){
     bg_pixels: bgUsed > 0 ? [...editorBgPixels] : null,
     frame_pixels: frameUsed > 0 ? [...editorFramePixels] : null,
     pixel_ts: [...editorPixelTimestamps],
-    age_hours: 0,
+    pixel_lt: [...editorPixelLifetimes],
+    bg_pixel_lt: bgUsed > 0 ? [...editorBgPixelLifetimes] : null,
+    frame_pixel_lt: frameUsed > 0 ? [...editorFramePixelLifetimes] : null,
     created: today,
     updated: today
   };
@@ -2091,7 +2190,7 @@ function updateSkinList(){
               ${s.bg_pixels&&s.bg_pixels.some(p=>p!==null)?' · 🖼'+s.bg_pixels.filter(p=>p!==null).length:''}
               ${s.frame_pixels&&s.frame_pixels.some(p=>p!==null)?' · ⊞'+s.frame_pixels.filter(p=>p!==null).length:''}
             </div>
-            <div style="font-size:10px;color:var(--text3)">📅 ${s.created||'—'}</div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${s.created||'—'} ${getSkinAgeStr(s)}</div>
           </div>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
@@ -2128,7 +2227,7 @@ function updateSkinList(){
             if(s.color_override){
               color = s.color_override;
             } else {
-              color = pixels[p] ? getPixelColorWithAge(pixels[p], p, s.pixel_ts) : '#1a1d33';
+              color = pixels[p] ? getPixelColorWithAge(pixels[p], p, s.pixel_ts, s.pixel_lt) : '#1a1d33';
             }
             let r,g,b;
             if(color && color.startsWith('rgb(')){
@@ -2147,7 +2246,7 @@ function updateSkinList(){
           const ctx = bgCanvas.getContext('2d');
           const imageData = ctx.createImageData(sz, sz);
           for(let p=0;p<total;p++){
-            const color = s.bg_pixels[p] ? getPixelColorWithAge(s.bg_pixels[p], p, s.bg_pixel_ts || s.pixel_ts) : '#1a1d33';
+            const color = s.bg_pixels[p] ? getPixelColorWithAge(s.bg_pixels[p], p, s.bg_pixel_ts || s.pixel_ts, s.bg_pixel_lt || s.pixel_lt) : '#1a1d33';
             let r,g,b;
             if(color.startsWith('rgb(')){
               const m = color.match(/(\d+)/g);
@@ -2165,7 +2264,7 @@ function updateSkinList(){
           const ctx = frCanvas.getContext('2d');
           const imageData = ctx.createImageData(sz, sz);
           for(let p=0;p<total;p++){
-            const color = s.frame_pixels[p] ? getPixelColorWithAge(s.frame_pixels[p], p, s.frame_pixel_ts || s.pixel_ts) : '#1a1d33';
+            const color = s.frame_pixels[p] ? getPixelColorWithAge(s.frame_pixels[p], p, s.frame_pixel_ts || s.pixel_ts, s.frame_pixel_lt || s.pixel_lt) : '#1a1d33';
             let r,g,b;
             if(color.startsWith('rgb(')){
               const m = color.match(/(\d+)/g);
@@ -2250,6 +2349,34 @@ function hexToRgb(hex){
   return [r,g,b];
 }
 
+function getSkinAgeStr(skin){
+  if(!skin || !skin.pixels) return '';
+  const pixels = skin.pixels;
+  const ts = skin.pixel_ts;
+  const lt = skin.pixel_lt;
+  if(!ts || !Array.isArray(ts)) return '';
+  let deadCount = 0, fadingCount = 0, aliveCount = 0;
+  let oldest = null;
+  for(let i=0;i<pixels.length;i++){
+    if(!pixels[i] || !ts[i]) continue;
+    const lifetime = (lt && lt[i]) ? lt[i] : PIXEL_LIFETIME_MS;
+    const age = Date.now() - ts[i];
+    if(age >= lifetime) deadCount++;
+    else if(age >= lifetime * 0.75) fadingCount++;
+    else aliveCount++;
+    if(!oldest || ts[i] < oldest) oldest = ts[i];
+  }
+  if(deadCount > 0) return `💀 ${deadCount}/${pixels.filter(p=>p!==null).length}`;
+  if(fadingCount > 0) return `🌅 ${fadingCount} вицвітають`;
+  if(oldest){
+    const hrs = Math.floor((Date.now() - oldest) / 3600000);
+    if(hrs < 1) return '⏱ <1 год';
+    if(hrs < 24) return `⏱ ${hrs} год`;
+    return `⏱ ${Math.floor(hrs/24)} дн`;
+  }
+  return '';
+}
+
 function renderPixelsToDataUrl(pixels, size){
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -2287,7 +2414,24 @@ function getGemClipPath(gemType){
 }
 
 // ===== PIXEL AGE / FADE SYSTEM =====
-const PIXEL_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PIXEL_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 hours (default)
+
+const PIXEL_LIFETIME_OPTIONS = [
+  {id: '6h',  label: '6 годин',  ms: 6*60*60*1000,  cost_per_pixel: 1},
+  {id: '12h', label: '12 годин', ms: 12*60*60*1000, cost_per_pixel: 2},
+  {id: '24h', label: '1 день',   ms: 24*60*60*1000, cost_per_pixel: 3},
+  {id: '48h', label: '2 дні',    ms: 48*60*60*1000, cost_per_pixel: 5},
+  {id: '72h', label: '3 дні',    ms: 72*60*60*1000, cost_per_pixel: 8},
+];
+
+function blendColor(color1, color2, ratio){
+  const [r1,g1,b1] = hexToRgb(color1);
+  const [r2,g2,b2] = hexToRgb(color2);
+  const r = Math.round(r1 + (r2 - r1) * ratio);
+  const g = Math.round(g1 + (g2 - g1) * ratio);
+  const b = Math.round(b1 + (b2 - b1) * ratio);
+  return `rgb(${r},${g},${b})`;
+}
 
 function getPixelRenderColor(color, pixelTs, skinPixelTs){
   if(!color) return null;
@@ -2315,22 +2459,21 @@ function getPixelRenderColor(color, pixelTs, skinPixelTs){
   return color;
 }
 
-function getPixelColorWithAge(color, idx, pixel_ts){
+function getPixelColorWithAge(color, idx, pixel_ts, pixel_lt){
   if(!color) return null;
   if(!pixel_ts || !Array.isArray(pixel_ts)) return color;
   const ts = pixel_ts[idx];
   if(!ts || typeof ts !== 'number') return color;
+  const lt = (pixel_lt && Array.isArray(pixel_lt) && pixel_lt[idx])
+    ? pixel_lt[idx]
+    : PIXEL_LIFETIME_MS;
   const age = Date.now() - ts;
-  if(age >= PIXEL_LIFETIME_MS) return '#555566'; // fully faded
-  if(age >= PIXEL_LIFETIME_MS * 0.75){
+  if(age >= lt) return '#333344'; // dead pixel
+  if(age >= lt * 0.75){
     const [r,g,b] = hexToRgb(color);
-    const factor = (age - PIXEL_LIFETIME_MS * 0.75) / (PIXEL_LIFETIME_MS * 0.25);
+    const factor = (age - lt * 0.75) / (lt * 0.25);
     const fade = Math.min(1, factor);
-    const gray = Math.round((r+g+b)/3);
-    const nr = Math.round(r + (gray - r) * fade * 0.5);
-    const ng = Math.round(g + (gray - g) * fade * 0.5);
-    const nb = Math.round(b + (gray - b) * fade * 0.5);
-    return `rgb(${nr},${ng},${nb})`;
+    return blendColor(color, '#444466', fade);
   }
   return color;
 }
@@ -2373,7 +2516,7 @@ function renderGemCompositeDataUrl(skin, gemType){
   for(let i=0;i<total;i++){
     const color = gemPixels[i];
     if(color){
-      const aged = getPixelColorWithAge(color, i, skin.pixel_ts);
+      const aged = getPixelColorWithAge(color, i, skin.pixel_ts, skin.pixel_lt);
       let r,g,b;
       if(aged.startsWith('rgb(')){
         const m = aged.match(/(\d+)/g);
@@ -2394,7 +2537,7 @@ function renderGemCompositeDataUrl(skin, gemType){
     for(let i=0;i<total;i++){
       const color = skin.frame_pixels[i];
       if(color){
-        const aged = getPixelColorWithAge(color, i, skin.frame_pixel_ts || skin.pixel_ts);
+        const aged = getPixelColorWithAge(color, i, skin.frame_pixel_ts || skin.pixel_ts, skin.frame_pixel_lt || skin.pixel_lt);
         let r,g,b;
         if(aged.startsWith('rgb(')){
           const m = aged.match(/(\d+)/g);
