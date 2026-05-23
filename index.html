@@ -326,31 +326,39 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <span class="resource">🪙<span class="val" id="shop-gold">0</span></span>
       </div>
     </div>
-    <div class="shop-category">🎨 Холсти</div>
+    <div class="shop-category">🎨 Холсти камінців</div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyCanvas('gems')">
-        <div class="shop-icon">💎</div>
+      <div class="shop-item" onclick="buyCanvas('ruby')">
+        <div class="shop-icon">🟣</div>
         <div class="shop-info">
-          <div class="shop-name">Gem Canvas 16×16</div>
-          <div class="shop-desc">Скін для камінців Match-3</div>
+          <div class="shop-name">Ruby Canvas</div>
+          <div class="shop-desc">Скін для круглих червоних камінців</div>
         </div>
-        <div class="shop-price" id="shop-price-canvas_gems">30 🪙</div>
+        <div class="shop-price" id="shop-price-canvas_ruby">20 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('board')">
-        <div class="shop-icon">📋</div>
+      <div class="shop-item" onclick="buyCanvas('sapphire')">
+        <div class="shop-icon">🔵</div>
         <div class="shop-info">
-          <div class="shop-name">Board Canvas 12×12</div>
-          <div class="shop-desc">Скін для поля Match-3</div>
+          <div class="shop-name">Sapphire Canvas</div>
+          <div class="shop-desc">Скін для ромбових синіх камінців</div>
         </div>
-        <div class="shop-price" id="shop-price-canvas_board">25 🪙</div>
+        <div class="shop-price" id="shop-price-canvas_sapphire">20 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('frame')">
-        <div class="shop-icon">🖼</div>
+      <div class="shop-item" onclick="buyCanvas('gold')">
+        <div class="shop-icon">🟡</div>
         <div class="shop-info">
-          <div class="shop-name">Frame Canvas 8×8</div>
-          <div class="shop-desc">Скін для рамки/фону</div>
+          <div class="shop-name">Gold Canvas</div>
+          <div class="shop-desc">Скін для трикутних жовтих камінців</div>
         </div>
-        <div class="shop-price" id="shop-price-canvas_frame">15 🪙</div>
+        <div class="shop-price" id="shop-price-canvas_gold">20 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('emerald')">
+        <div class="shop-icon">🟢</div>
+        <div class="shop-info">
+          <div class="shop-name">Emerald Canvas</div>
+          <div class="shop-desc">Скін для квадратних з хрестом зелених камінців</div>
+        </div>
+        <div class="shop-price" id="shop-price-canvas_emerald">20 🪙</div>
       </div>
     </div>
     <div class="shop-category">⏱ Піксель-години</div>
@@ -507,7 +515,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 const DEFAULT_SAVE = {
   resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
   inventory: {canvases:[], skins:[], owned_achievements:[]},
-  equipped_skin: null,
+  equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
   achievements: [],
   stats: {matches:0, earned:0, record:0},
   chat: [],
@@ -574,15 +582,22 @@ function updateUI(){
     document.getElementById('stat-earned').textContent = SAVE.stats.earned;
     document.getElementById('stat-record').textContent = SAVE.stats.record;
   }
-  // Equipped skin display
+  // Equipped skins display (per gem type)
   const eqEl = document.getElementById('dash-equipped-skin');
   if(eqEl){
-    if(SAVE.equipped_skin){
-      const info = CANVAS_TYPES[SAVE.equipped_skin.type] || {icon:'🎨'};
-      eqEl.innerHTML = `⭐ Екіпіровано: <strong>${SAVE.equipped_skin.name}</strong> ${info.icon}`;
-    }else{
-      eqEl.innerHTML = `🎨 Скін не екіпіровано — Match-3 у <strong>чорно-білому</strong> режимі`;
+    const eq = SAVE.equipped_skins || {};
+    const gemLabels = {ruby:'🟣 Ruby', sapphire:'🔵 Sapphire', gold:'🟡 Gold', emerald:'🟢 Emerald'};
+    let parts = [];
+    for(const gt of ['ruby','sapphire','gold','emerald']){
+      if(eq[gt]){
+        const skin = SAVE.inventory.skins.find(s=>s.id===eq[gt]);
+        if(skin) parts.push(`${gemLabels[gt]}: ⭐${skin.name}`);
+        else parts.push(`${gemLabels[gt]}: ⭐(невідомий)`);
+      } else {
+        parts.push(`${gemLabels[gt]}: ⬜ ЧБ`);
+      }
     }
+    eqEl.innerHTML = `🎨 <strong>Екіпіровані скіни:</strong><br><span style="font-size:12px">${parts.join(' · ')}</span>`;
   }
   updateAchList();
   updateSkinList();
@@ -626,8 +641,11 @@ function getComboMultiplier(){
   return SAVE.inventory.owned_achievements.includes('combo')?2:1;
 }
 
-function isBwMode(){
-  return !SAVE.equipped_skin;
+function isGemBw(gemType){
+  // gemType: 0=ruby, 1=sapphire, 2=gold, 3=emerald
+  const gemNames = ['ruby','sapphire','gold','emerald'];
+  const eq = SAVE.equipped_skins || {};
+  return !eq[gemNames[gemType]];
 }
 
 function startMatch3(){
@@ -658,18 +676,18 @@ function startMatch3(){
 function renderBoard(){
   const container = document.getElementById('m3-board');
   container.innerHTML='';
-  const bw = isBwMode();
   const style = calcGridSize();
   container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
   for(let r=0;r<BOARD_SIZE;r++){
     for(let c=0;c<BOARD_SIZE;c++){
       const cell = document.createElement('div');
       cell.className='m3-cell';
-      if(bw) cell.classList.add('bw');
+      const gt = board[r][c];
+      if(isGemBw(gt)) cell.classList.add('bw');
       cell.dataset.r=r;
       cell.dataset.c=c;
       const gem = document.createElement('div');
-      gem.className='gem g'+board[r][c];
+      gem.className='gem g'+gt;
       cell.appendChild(gem);
       cell.addEventListener('click',()=>onCellClick(r,c));
       cell.addEventListener('touchstart',(e)=>{
@@ -850,9 +868,10 @@ function endMatch3(){
 
 // ===== SHOP =====
 const CANVAS_TYPES = {
-  gems:   {size:16, price:30, name:'Gem Canvas 16×16', icon:'💎'},
-  board:  {size:12, price:25, name:'Board Canvas 12×12', icon:'📋'},
-  frame:  {size: 8, price:15, name:'Frame Canvas 8×8', icon:'🖼'},
+  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby'},
+  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire'},
+  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold'},
+  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
 };
 
 function buyCanvas(type){
@@ -866,6 +885,7 @@ function buyCanvas(type){
   SAVE.inventory.canvases.push({
     id: canvasId,
     type: type,
+    gem_type: type,
     size: info.size,
     pixels: new Array(totalPixels).fill(null)
   });
@@ -970,14 +990,15 @@ function renderCanvasList(){
   let html = '';
   for(let i=0;i<canvases.length;i++){
     const c = canvases[i];
-    const info = CANVAS_TYPES[c.type] || {name:c.type+' Canvas', icon:'🖼'};
+    const info = CANVAS_TYPES[c.type] || CANVAS_TYPES[c.gem_type] || {name:c.type+' Canvas', icon:'🖼'};
     const used = c.pixels ? c.pixels.filter(p=>p!==null).length : 0;
     const total = c.size * c.size;
+    const gt = c.gem_type || c.type;
     html += `<div class="shop-item" onclick="openCanvasEditor('${c.id}')" style="cursor:pointer">
       <div class="shop-icon">${info.icon}</div>
       <div class="shop-info">
         <div class="shop-name">${info.name}</div>
-        <div class="shop-desc">${used}/${total} пікселів заповнено</div>
+        <div class="shop-desc">${used}/${total} пікселів · ${gt}</div>
       </div>
       <div style="font-size:12px;color:var(--text2);white-space:nowrap">✏ Редагувати</div>
     </div>`;
@@ -1182,6 +1203,7 @@ function saveSkinFromEditor(){
     name: skinName.trim(),
     type: canvasObj.type,
     canvas_type: canvasObj.type,
+    gem_type: canvasObj.type,
     size: editorSize,
     pixels: [...editorPixels],
     age_hours: 0,
@@ -1208,70 +1230,82 @@ function updateSkinList(){
     container.innerHTML='<div class="empty-state"><span class="icon">🎨</span>Створіть скін у редакторі</div>';
     return;
   }
+  const eq = SAVE.equipped_skins || {};
+  const gemLabels = {ruby:'🟣 Ruby', sapphire:'🔵 Sapphire', gold:'🟡 Gold', emerald:'🟢 Emerald'};
+  const gemOrder = ['ruby','sapphire','gold','emerald'];
   let html = '';
-  for(let i=0;i<skins.length;i++){
-    const s = skins[i];
-    const isEquipped = SAVE.equipped_skin && SAVE.equipped_skin.id===s.id;
-    const info = CANVAS_TYPES[s.type] || {name:s.type, icon:'🎨'};
-    const used = s.pixels ? s.pixels.filter(p=>p!==null).length : 0;
-    html += `
-    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;border:${isEquipped?'2px solid var(--neon)':'1px solid transparent'}">
-      <div style="display:flex;align-items:center;gap:10px">
-        <canvas id="inv-skin-${i}" width="${s.size||16}" height="${s.size||16}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;flex-shrink:0"></canvas>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
-          <div style="font-size:11px;color:var(--text2)">${info.icon} ${info.name} · ${used}/${s.size*s.size} px</div>
-          <div style="font-size:10px;color:var(--text3)">📅 ${s.created}</div>
+  for(const gt of gemOrder){
+    const groupSkins = skins.filter(s=>s.gem_type===gt || s.type===gt);
+    if(!groupSkins.length) continue;
+    html += `<div style="margin:8px 0 4px;font-size:13px;font-weight:700;color:var(--text2)">${gemLabels[gt]}</div>`;
+    for(let i=0;i<groupSkins.length;i++){
+      const s = groupSkins[i];
+      const isEquipped = eq[gt] === s.id;
+      const used = s.pixels ? s.pixels.filter(p=>p!==null).length : 0;
+      html += `
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:${isEquipped?'2px solid var(--neon)':'1px solid transparent'}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <canvas id="inv-skin-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;flex-shrink:0"></canvas>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
+            <div style="font-size:11px;color:var(--text2)">${used}/${s.size*s.size} px</div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${s.created}</div>
+          </div>
         </div>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-        ${isEquipped
-          ? `<button class="btn btn-small btn-secondary" onclick="unequipSkin()" style="flex:1">⬇ Зняти</button>`
-          : `<button class="btn btn-small btn-success" onclick="equipSkinById('${s.id}')" style="flex:1">✅ Екіпірувати</button>`
-        }
-        <button class="btn btn-small btn-danger" onclick="sellSkinById('${s.id}')" style="flex:1">💰 Продати</button>
-        <button class="btn btn-small btn-secondary" onclick="deleteSkinById('${s.id}')" style="flex:0">🗑</button>
-      </div>
-    </div>`;
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          ${isEquipped
+            ? `<button class="btn btn-small btn-secondary" onclick="unequipSkinByType('${gt}')" style="flex:1">⬇ Зняти</button>`
+            : `<button class="btn btn-small btn-success" onclick="equipSkinById('${s.id}','${gt}')" style="flex:1">✅ Екіпірувати</button>`
+          }
+          <button class="btn btn-small btn-danger" onclick="sellSkinById('${s.id}')" style="flex:1">💰 Продати</button>
+          <button class="btn btn-small btn-secondary" onclick="deleteSkinById('${s.id}')" style="flex:0">🗑</button>
+        </div>
+      </div>`;
+    }
   }
   container.innerHTML = html;
 
   // Render mini skins
   setTimeout(()=>{
-    for(let i=0;i<skins.length;i++){
-      const canvas = document.getElementById('inv-skin-'+i);
-      if(canvas){
-        const ctx = canvas.getContext('2d');
-        const s = skins[i];
-        const sz = s.size || 16;
-        const total = sz * sz;
-        const imageData = ctx.createImageData(sz, sz);
-        const pixels = s.pixels || [];
-        for(let p=0;p<total;p++){
-          const color = pixels[p] ? pixels[p] : '#1a1d33';
-          const [r,g,b] = hexToRgb(color);
-          imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+    for(const gt of gemOrder){
+      const groupSkins = skins.filter(s=>s.gem_type===gt || s.type===gt);
+      for(let i=0;i<groupSkins.length;i++){
+        const canvas = document.getElementById('inv-skin-'+gt+'-'+i);
+        if(canvas){
+          const ctx = canvas.getContext('2d');
+          const s = groupSkins[i];
+          const sz = s.size || 16;
+          const total = sz * sz;
+          const imageData = ctx.createImageData(sz, sz);
+          const pixels = s.pixels || [];
+          for(let p=0;p<total;p++){
+            const color = pixels[p] ? pixels[p] : '#1a1d33';
+            const [r,g,b] = hexToRgb(color);
+            imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+          }
+          ctx.putImageData(imageData,0,0);
         }
-        ctx.putImageData(imageData,0,0);
       }
     }
   },50);
 }
 
-function equipSkinById(skinId){
+function equipSkinById(skinId, gemType){
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
-  SAVE.equipped_skin = {id: skin.id, name: skin.name, type: skin.type, pixels: [...skin.pixels], size: skin.size};
+  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
+  SAVE.equipped_skins[gemType] = skin.id;
   saveToDisk();
   updateUI();
-  toast('⭐ "'+skin.name+'" екіпіровано! Match-3 кольоровий!');
+  toast('⭐ "'+skin.name+'" екіпіровано для '+gemType+'!');
 }
 
-function unequipSkin(){
-  SAVE.equipped_skin = null;
+function unequipSkinByType(gemType){
+  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
+  SAVE.equipped_skins[gemType] = null;
   saveToDisk();
   updateUI();
-  toast('⬇ Скін знято. Match-3 чорно-білий.');
+  toast('⬇ Скін знято з '+gemType+'. Повернуто до ЧБ.');
 }
 
 function sellSkinById(skinId){
@@ -1284,9 +1318,11 @@ function sellSkinById(skinId){
   // Remove from inventory
   const idx = SAVE.inventory.skins.indexOf(skin);
   if(idx>=0) SAVE.inventory.skins.splice(idx,1);
-  // Unequip if equipped
-  if(SAVE.equipped_skin && SAVE.equipped_skin.id===skin.id){
-    SAVE.equipped_skin = null;
+  // Unequip if equipped for any type
+  if(SAVE.equipped_skins){
+    for(const gt of ['ruby','sapphire','gold','emerald']){
+      if(SAVE.equipped_skins[gt]===skin.id) SAVE.equipped_skins[gt]=null;
+    }
   }
   saveToDisk();
   updateUI();
@@ -1299,8 +1335,10 @@ function deleteSkinById(skinId){
   if(!confirm('Видалити "'+skin.name+'" безповоротно?')) return;
   const idx = SAVE.inventory.skins.indexOf(skin);
   if(idx>=0) SAVE.inventory.skins.splice(idx,1);
-  if(SAVE.equipped_skin && SAVE.equipped_skin.id===skin.id){
-    SAVE.equipped_skin = null;
+  if(SAVE.equipped_skins){
+    for(const gt of ['ruby','sapphire','gold','emerald']){
+      if(SAVE.equipped_skins[gt]===skin.id) SAVE.equipped_skins[gt]=null;
+    }
   }
   saveToDisk();
   updateUI();
