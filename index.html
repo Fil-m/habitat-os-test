@@ -399,6 +399,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="shop-price" id="ach-price-combo">30 🪙</div>
       </div>
     </div>
+    <div class="shop-category">📦 Паки налаштувань</div>
+    <div style="margin:0 16px" id="shop-pack-list">
+      <div class="empty-state"><span class="icon">📦</span>Завантаження...</div>
+    </div>
     <div style="flex:1;min-height:20px"></div>
   </div>
 
@@ -431,6 +435,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="empty-state">
           <span class="icon">🎨</span>
           Створіть скін у редакторі
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Мої паки</div>
+      <div id="packs-list">
+        <div class="empty-state">
+          <span class="icon">📦</span>
+          Купіть пак у магазині
         </div>
       </div>
     </div>
@@ -519,7 +532,8 @@ const DEFAULT_SAVE = {
   achievements: [],
   stats: {matches:0, earned:0, record:0},
   chat: [],
-  match3_state: {daily_matches:0}
+  match3_state: {daily_matches:0},
+  packs: []
 };
 
 function loadSave(){
@@ -546,6 +560,7 @@ function loadSave(){
       if(!Array.isArray(data.chat)) data.chat = [];
       if(typeof data.match3_state !== 'object') data.match3_state = {...DEFAULT_SAVE.match3_state};
       if(typeof data.match3_state.daily_matches !== 'number') data.match3_state.daily_matches = 0;
+      if(!Array.isArray(data.packs)) data.packs = [];
       return data;
     }
   }catch(e){console.error('Save load error',e);}
@@ -601,6 +616,7 @@ function updateUI(){
   }
   updateAchList();
   updateSkinList();
+  updatePacksList();
 }
 
 // ===== SCREEN NAV =====
@@ -620,6 +636,7 @@ function showScreen(id){
     document.getElementById('editor-back-btn').onclick = function(){ showScreen('dashboard'); };
   }
   if(id==='chat') renderChat();
+  if(id==='shop') renderShopPacks();
   updateUI();
 }
 
@@ -688,6 +705,18 @@ function renderBoard(){
       cell.dataset.c=c;
       const gem = document.createElement('div');
       gem.className='gem g'+gt;
+      // Apply color override from equipped skin
+      const gemNames = ['ruby','sapphire','gold','emerald'];
+      const eq = SAVE.equipped_skins || {};
+      const eqSkinId = eq[gemNames[gt]];
+      if(eqSkinId){
+        const eqSkin = SAVE.inventory.skins.find(s=>s.id===eqSkinId);
+        if(eqSkin && eqSkin.color_override){
+          gem.style.background = eqSkin.color_override;
+          gem.style.border = 'none';
+          gem.style.boxShadow = '0 0 10px '+eqSkin.color_override;
+        }
+      }
       cell.appendChild(gem);
       cell.addEventListener('click',()=>onCellClick(r,c));
       cell.addEventListener('touchstart',(e)=>{
@@ -873,6 +902,193 @@ const CANVAS_TYPES = {
   gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold'},
   emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
 };
+
+// ===== PACK SYSTEM =====
+const SYSTEM_PACKS = [
+  {
+    id: 'neon_night',
+    name: '🌟 Neon Night',
+    author: 'System',
+    price: 25,
+    desc: 'Неонові Ruby та Sapphire',
+    skins: {
+      ruby: {color: '#ff00ff'},
+      sapphire: {color: '#00ffff'}
+    }
+  },
+  {
+    id: 'lava_storm',
+    name: '🔥 Lava Storm',
+    author: 'System',
+    price: 25,
+    desc: 'Вогняні Gold та Emerald',
+    skins: {
+      gold: {color: '#ff4400'},
+      emerald: {color: '#ffaa00'}
+    }
+  },
+  {
+    id: 'full_color',
+    name: '🌈 Full Color',
+    author: 'System',
+    price: 40,
+    desc: 'Всі 4 камінці стандартні кольорові',
+    skins: {
+      ruby: {color: null},
+      sapphire: {color: null},
+      gold: {color: null},
+      emerald: {color: null}
+    }
+  }
+];
+
+function buyPack(packId){
+  const pack = SYSTEM_PACKS.find(p=>p.id===packId);
+  if(!pack){ toast('❌ Пак не знайдено'); return; }
+  // Check if already owned
+  if(SAVE.packs.find(p=>p.id===packId)){
+    toast('ℹ️ Пак вже придбано!'); return;
+  }
+  if(SAVE.resources.gold < pack.price){
+    toast('❌ Недостатньо Gold!'); return;
+  }
+  SAVE.resources.gold -= pack.price;
+  // Record pack purchase
+  SAVE.packs.push({
+    id: pack.id,
+    name: pack.name,
+    author: pack.author,
+    price: pack.price,
+    desc: pack.desc,
+    skins: JSON.parse(JSON.stringify(pack.skins)),
+    applied: true
+  });
+  // Create and auto-equip skins from this pack
+  const gemTypes = Object.keys(pack.skins);
+  const createdSkinIds = [];
+  for(const gt of gemTypes){
+    const color = pack.skins[gt].color;
+    // For null color (standard), use default gem color
+    let fillColor = color;
+    if(fillColor === null){
+      const defaultColors = {ruby:'#ff4466', sapphire:'#4488ff', gold:'#ffcc00', emerald:'#44dd88'};
+      fillColor = defaultColors[gt] || '#888888';
+    }
+    // Create a skin object in inventory
+    const skinId = 'pack_'+packId+'_'+gt+'_'+Date.now();
+    const skin = {
+      id: skinId,
+      name: pack.name+' — '+gt.charAt(0).toUpperCase()+gt.slice(1),
+      type: gt,
+      gem_type: gt,
+      from_pack: packId,
+      pack_name: pack.name,
+      size: 16,
+      color_override: color, // Keep original null for rendering logic
+      pixels: new Array(256).fill(fillColor),
+      age_hours: 0,
+      created: new Date().toISOString().split('T')[0]
+    };
+    SAVE.inventory.skins.push(skin);
+    createdSkinIds.push({gt, id: skinId});
+  }
+  // Auto-equip all skins from pack
+  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
+  for(const {gt, id} of createdSkinIds){
+    SAVE.equipped_skins[gt] = id;
+  }
+  saveToDisk();
+  updateUI();
+  toast('✅ Пак "'+pack.name+'" придбано та застосовано!');
+}
+
+function applyPack(packId){
+  const packData = SAVE.packs.find(p=>p.id===packId);
+  if(!packData){ toast('❌ Пак не придбано'); return; }
+  const gemTypes = Object.keys(packData.skins);
+  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
+  // Find the matching skin in inventory for each gem type from this pack
+  for(const gt of gemTypes){
+    const skin = SAVE.inventory.skins.find(s=>s.from_pack===packId && s.gem_type===gt);
+    if(skin){
+      SAVE.equipped_skins[gt] = skin.id;
+    }
+  }
+  packData.applied = true;
+  saveToDisk();
+  updateUI();
+  toast('✅ Пак "'+packData.name+'" застосовано!');
+}
+
+function renderShopPacks(){
+  const container = document.getElementById('shop-pack-list');
+  if(!container) return;
+  let html = '';
+  for(const pack of SYSTEM_PACKS){
+    const owned = SAVE.packs.find(p=>p.id===pack.id);
+    const gemList = Object.keys(pack.skins).map(k=>{
+      const labels = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
+      return labels[k]||k;
+    }).join(' ');
+    html += `
+      <div class="shop-item" onclick="${owned?'':"buyPack('"+pack.id+"')"}" style="${owned?'opacity:0.6':''}">
+        <div class="shop-icon">📦</div>
+        <div class="shop-info">
+          <div class="shop-name">${pack.name}</div>
+          <div class="shop-desc">${pack.desc}<br><span style="font-size:11px;color:var(--text3)">${gemList} · ${pack.author}</span></div>
+        </div>
+        <div class="shop-price">${owned?'✅ Куплено':pack.price+' 🪙'}</div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function updatePacksList(){
+  const container = document.getElementById('packs-list');
+  if(!container) return;
+  const packs = SAVE.packs || [];
+  if(!packs.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">📦</span>Ще немає придбаних паків</div>';
+    return;
+  }
+  let html = '';
+  for(const p of packs){
+    const packDef = SYSTEM_PACKS.find(sp=>sp.id===p.id);
+    const gemTypes = Object.keys(p.skins || {});
+    const eq = SAVE.equipped_skins || {};
+    // Check how many skins from this pack are currently equipped
+    let equippedCount = 0;
+    for(const gt of gemTypes){
+      const skin = SAVE.inventory.skins.find(s=>s.from_pack===p.id && s.gem_type===gt);
+      if(skin && eq[gt]===skin.id) equippedCount++;
+    }
+    const allEquipped = equippedCount === gemTypes.length;
+    html += `
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;border:${allEquipped?'2px solid var(--neon)':'1px solid transparent'}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:24px">📦</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">${p.name}</div>
+            <div style="font-size:11px;color:var(--text2)">✍ ${p.author} · ${packDef?packDef.desc:''}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">
+              ${gemTypes.map(gt=>{
+                const labels = {ruby:'🟣 Ruby', sapphire:'🔵 Sapphire', gold:'🟡 Gold', emerald:'🟢 Emerald'};
+                const skin = SAVE.inventory.skins.find(s=>s.from_pack===p.id && s.gem_type===gt);
+                const isEq = skin && eq[gt]===skin.id;
+                return (isEq?'✅ ':'⬜ ')+labels[gt];
+              }).join(' · ')}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn btn-small ${allEquipped?'btn-secondary':'btn-success'}" onclick="applyPack('${p.id}')" style="flex:1">
+            ${allEquipped?'✅ Застосовано':'📦 Застосувати пак'}
+          </button>
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
 
 function buyCanvas(type){
   const info = CANVAS_TYPES[type];
@@ -1242,14 +1458,16 @@ function updateSkinList(){
       const s = groupSkins[i];
       const isEquipped = eq[gt] === s.id;
       const used = s.pixels ? s.pixels.filter(p=>p!==null).length : 0;
+      const total = (s.size||16) * (s.size||16);
+      const fromPack = s.from_pack ? true : false;
       html += `
       <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:${isEquipped?'2px solid var(--neon)':'1px solid transparent'}">
         <div style="display:flex;align-items:center;gap:10px">
           <canvas id="inv-skin-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;flex-shrink:0"></canvas>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
-            <div style="font-size:11px;color:var(--text2)">${used}/${s.size*s.size} px</div>
-            <div style="font-size:10px;color:var(--text3)">📅 ${s.created}</div>
+            <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}${fromPack?' <span style="font-size:10px;color:var(--neon2);font-weight:400">📦 з пака</span>':''}</div>
+            <div style="font-size:11px;color:var(--text2)">${s.color_override ? '🎨 '+s.color_override : used+'/'+total+' px'}</div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${s.created||'—'}</div>
           </div>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
@@ -1279,7 +1497,12 @@ function updateSkinList(){
           const imageData = ctx.createImageData(sz, sz);
           const pixels = s.pixels || [];
           for(let p=0;p<total;p++){
-            const color = pixels[p] ? pixels[p] : '#1a1d33';
+            let color;
+            if(s.color_override){
+              color = s.color_override;
+            } else {
+              color = pixels[p] ? pixels[p] : '#1a1d33';
+            }
             const [r,g,b] = hexToRgb(color);
             imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
           }
