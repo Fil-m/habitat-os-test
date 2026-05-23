@@ -336,9 +336,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <span class="icon">🏪</span>
         <span class="label">Магазин</span>
       </button>
-      <button class="dash-btn skin" onclick="showScreen('achieve')">
+      <button class="dash-btn skin" onclick="openSkinEditor()">
         <span class="icon">🎨</span>
-        <span class="label">Редактор</span>
+        <span class="label">Створити скін</span>
       </button>
       <button class="dash-btn chat" onclick="showScreen('chat')">
         <span class="icon">💬</span>
@@ -650,15 +650,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
 
-    <!-- Section 4: My Canvases -->
-    <div class="card">
-      <div class="card-title">🖼 Мої холсти</div>
-      <div id="achieve-canvas-list">
-        <div class="empty-state"><span class="icon">🖼</span>Купіть холст у магазині</div>
-      </div>
-    </div>
-
-    <!-- Section 5: My Packs -->
+    <!-- Section 4: My Packs -->
     <div class="card">
       <div class="card-title">📦 Мої паки</div>
       <div id="packs-list">
@@ -668,11 +660,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
     <!-- Bottom buttons -->
     <div style="margin:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn btn-primary btn-block" onclick="showScreen('shop')">
-        🛒 В магазин
+      <button class="btn btn-primary btn-block" onclick="openSkinEditor()">
+        🎨 Створити скін
       </button>
       <button class="btn btn-gold btn-block" onclick="showScreen('shop')">
-        📦 Купити пак
+        🛒 В магазин
       </button>
     </div>
     <div style="flex:1;min-height:20px"></div>
@@ -823,7 +815,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 // ===== SAVE SYSTEM =====
 const DEFAULT_SAVE = {
   resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
-  inventory: {canvases:[], skins:[], owned_achievements:[]},
+  inventory: {skins:[], owned_achievements:[]},
   equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
   achievements: {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false},
   market_listings: [],
@@ -850,7 +842,12 @@ function loadSave(){
         if(!(k in data.resources)) data.resources[k] = DEFAULT_SAVE.resources[k];
       }
       if(typeof data.inventory !== 'object') data.inventory = {...DEFAULT_SAVE.inventory};
-      if(!Array.isArray(data.inventory.canvases)) data.inventory.canvases = [];
+      // Clean up old canvases — больше не используются
+      delete data.inventory.canvases;
+      // Clean up old pack skins (from_pack) — паки теперь активируют эффекты
+      if(Array.isArray(data.inventory.skins)){
+        data.inventory.skins = data.inventory.skins.filter(s=>!s.from_pack);
+      }
       if(!Array.isArray(data.inventory.skins)) data.inventory.skins = [];
       if(!Array.isArray(data.inventory.owned_achievements)) data.inventory.owned_achievements = [];
       if(typeof data.stats !== 'object') data.stats = {...DEFAULT_SAVE.stats};
@@ -962,22 +959,13 @@ async function showScreen(id){
   });
   if(id==='match3' && !window._m3Started) startMatch3();
   if(id==='skineditor') {
-    // Editor opens with a pending canvas from achievements or shop
-    if(window.editorPendingCanvasId) {
-      openCanvasEditor(window.editorPendingCanvasId);
-      window.editorPendingCanvasId = null;
-    } else {
-      // No canvas selected — redirect to achievements
-      toast('❌ Оберіть холст в ачівках');
-      showScreen('achieve');
-      return;
-    }
+    // Initialize editor canvas on first show
+    initEditorCanvas();
   }
   if(id==='shop') { renderShopPacks(); renderMarketListings(); }
   if(id==='profile') updateProfile();
   if(id==='achieve') {
     // Make sure all sections are rendered when switching to achievements
-    updateAchieveCanvasList();
     updatePacksList();
   }
   updateUI();
@@ -1274,67 +1262,40 @@ function endMatch3(){
   document.getElementById('m3-result').classList.remove('hidden');
 }
 
-// ===== SHOP =====
-const CANVAS_TYPES = {
-  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby'},
-  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire'},
-  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold'},
-  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
-};
-
-// ===== SYSTEM PACKS =====
+// ===== SYSTEM PACKS (набори ефектів/правил) =====
 const SYSTEM_PACKS = {
-  neon_night: {
-    id: 'neon_night',
-    name: 'Neon Night',
-    icon: '🌃',
-    price: 50,
-    desc: 'Темна палітра з неоновими акцентами для всіх типів',
-    gem_type: null, // applies to all
-    color_override: '#00f0ff',
-    skins: [
-      {name:'Neon Ruby', gem_type:'ruby', color_override:'#ff44ff'},
-      {name:'Neon Sapphire', gem_type:'sapphire', color_override:'#44aaff'},
-      {name:'Neon Gold', gem_type:'gold', color_override:'#ffcc44'},
-      {name:'Neon Emerald', gem_type:'emerald', color_override:'#44ff88'}
-    ]
+  extreme: {
+    id: 'extreme',
+    name: 'Екстрим',
+    icon: '⚡',
+    price: 30,
+    desc: 'Gravity Flip + Speed Mode + Bomb Mode на 30 хв',
+    effects: ['gravity_flip', 'speed_mode', 'bomb_mode'],
+    duration: 30
   },
-  lava_storm: {
-    id: 'lava_storm',
-    name: 'Lava Storm',
-    icon: '🌋',
-    price: 75,
-    desc: 'Вогняна тема — яскраві червоні та помаранчеві тони',
-    gem_type: null,
-    color_override: '#ff4400',
-    skins: [
-      {name:'Lava Ruby', gem_type:'ruby', color_override:'#ff2200'},
-      {name:'Lava Sapphire', gem_type:'sapphire', color_override:'#ff6644'},
-      {name:'Lava Gold', gem_type:'gold', color_override:'#ffaa00'},
-      {name:'Lava Emerald', gem_type:'emerald', color_override:'#ff8844'}
-    ]
+  visual: {
+    id: 'visual',
+    name: 'Візуальний',
+    icon: '✨',
+    price: 20,
+    desc: 'Gem Glow + Star Burst + Rainbow Trail на 30 хв',
+    effects: ['gem_glow', 'star_burst', 'rainbow_trail'],
+    duration: 30
   },
-  full_color: {
-    id: 'full_color',
-    name: 'Full Color',
-    icon: '🌈',
-    price: 100,
-    desc: 'Повнокольорові скіни з індивідуальними піксель-артами',
-    gem_type: null,
-    color_override: null, // pixel-based skins
-    skins: [
-      {name:'Color Burst Ruby', gem_type:'ruby', color_override:'#ff0066', pixels:null},
-      {name:'Ocean Sapphire', gem_type:'sapphire', color_override:'#0066ff', pixels:null},
-      {name:'Sunset Gold', gem_type:'gold', color_override:'#ff9900', pixels:null},
-      {name:'Forest Emerald', gem_type:'emerald', color_override:'#00cc66', pixels:null}
-    ]
+  chaos: {
+    id: 'chaos',
+    name: 'Хаос',
+    icon: '🌀',
+    price: 40,
+    desc: 'Invisible Gems + Random Swap + Frozen Row на 20 хв',
+    effects: ['invisible_gems', 'random_swap', 'frozen_row'],
+    duration: 20
   }
 };
 
 function buyPack(packId){
   const pack = SYSTEM_PACKS[packId];
   if(!pack){ toast('❌ Пак не знайдено'); return; }
-  // Check if already owned
   if(SAVE.packs.includes(packId)){
     toast('ℹ️ Пак вже придбано!');
     return;
@@ -1343,28 +1304,31 @@ function buyPack(packId){
     toast('❌ Недостатньо Gold! Потрібно '+pack.price+' 🪙');
     return;
   }
-  if(!confirm('Придбати пак "'+pack.name+'" за '+pack.price+' 🪙?')) return;
+  if(!confirm('Придбати пак "'+pack.name+'" за '+pack.price+' 🪙?\nВмикає: '+pack.effects.map(e=>EFFECTS_DEF[e]?EFFECTS_DEF[e].name:e).join(', ')+'\nТривалість: '+pack.duration+' хв')) return;
   SAVE.resources.gold -= pack.price;
-  // Apply all skins from the pack
-  for(const s of pack.skins){
-    const skin = {
-      id: 'pack_'+packId+'_'+s.gem_type+'_'+Date.now(),
-      name: s.name,
-      type: s.gem_type,
-      gem_type: s.gem_type,
-      size: 16,
-      pixels: s.pixels || [],
-      color_override: s.color_override,
-      from_pack: packId,
-      created: new Date().toISOString().split('T')[0]
-    };
-    SAVE.inventory.skins.push(skin);
+  // Activate all effects from the pack
+  for(const effId of pack.effects){
+    const def = EFFECTS_DEF[effId];
+    if(!def) continue;
+    const expiresAt = Date.now() + pack.duration * 60 * 1000;
+    if(SAVE.active_effects[effId] && SAVE.active_effects[effId].active){
+      const existing = SAVE.active_effects[effId];
+      if(Date.now() < existing.expires_at){
+        existing.expires_at += pack.duration * 60 * 1000;
+      } else {
+        existing.expires_at = expiresAt;
+      }
+      existing.active = true;
+    } else {
+      SAVE.active_effects[effId] = {active: true, expires_at: expiresAt};
+    }
   }
   SAVE.packs.push(packId);
   saveToDisk();
   updateUI();
   updatePacksList();
-  toast('✅ Пак "'+pack.name+'" придбано! '+pack.skins.length+' скінів додано.');
+  updateEffectsUI();
+  toast('✅ Пак "'+pack.name+'" придбано! Ефекти активовано на '+pack.duration+' хв.');
 }
 
 function applyPack(packId){
@@ -1373,17 +1337,27 @@ function applyPack(packId){
     toast('❌ Спочатку придбайте пак');
     return;
   }
-  // Get all skins from this pack
-  const packSkins = SAVE.inventory.skins.filter(s=>s.from_pack===packId);
-  for(const s of packSkins){
-    const gt = s.gem_type || s.type;
-    if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
-    SAVE.equipped_skins[gt] = s.id;
+  // Reactivate all effects from the pack
+  for(const effId of pack.effects){
+    const def = EFFECTS_DEF[effId];
+    if(!def) continue;
+    const expiresAt = Date.now() + pack.duration * 60 * 1000;
+    if(SAVE.active_effects[effId] && SAVE.active_effects[effId].active){
+      const existing = SAVE.active_effects[effId];
+      if(Date.now() < existing.expires_at){
+        existing.expires_at += pack.duration * 60 * 1000;
+      } else {
+        existing.expires_at = expiresAt;
+      }
+      existing.active = true;
+    } else {
+      SAVE.active_effects[effId] = {active: true, expires_at: expiresAt};
+    }
   }
   saveToDisk();
   updateUI();
-  toast('✅ Пак "'+pack.name+'" застосовано!');
-  refreshGameSkins();
+  updateEffectsUI();
+  toast('✅ Пак "'+pack.name+'" активовано! Ефекти подовжено на '+pack.duration+' хв.');
 }
 
 function renderShopPacks(){
@@ -1393,17 +1367,16 @@ function renderShopPacks(){
   for(const id in SYSTEM_PACKS){
     const p = SYSTEM_PACKS[id];
     const owned = SAVE.packs.includes(id);
-    const hasSkins = SAVE.inventory.skins.some(s=>s.from_pack===id);
+    const effNames = p.effects.map(e=>EFFECTS_DEF[e]?EFFECTS_DEF[e].name:e).join(', ');
     html += `<div class="shop-item" style="cursor:default">
       <div class="shop-icon">${p.icon}</div>
       <div class="shop-info">
         <div class="shop-name">${p.name} ${owned?'✅':''}</div>
-        <div class="shop-desc">${p.desc} · ${p.skins.length} скінів</div>
+        <div class="shop-desc">${effNames} · ${p.duration} хв</div>
       </div>
       <div class="shop-price">${p.price} 🪙</div>
       ${owned
-        ? (hasSkins ? `<button class="btn btn-small btn-success" onclick="applyPack('${id}')">⭐ Одягнути всі</button>`
-                    : `<button class="btn btn-small btn-success" onclick="buyPack('${id}')">🔄 Відновити</button>`)
+        ? `<button class="btn btn-small btn-success" onclick="applyPack('${id}')">🔄 Подовжити</button>`
         : `<button class="btn btn-small btn-primary" onclick="buyPack('${id}')">🛒 Купити</button>`
       }
     </div>`;
@@ -1423,16 +1396,15 @@ function updatePacksList(){
   for(const id of ownedPacks){
     const p = SYSTEM_PACKS[id];
     if(!p) continue;
-    const packSkins = SAVE.inventory.skins.filter(s=>s.from_pack===id);
-    const hasSkins = packSkins.length > 0;
+    const effNames = p.effects.map(e=>EFFECTS_DEF[e]?EFFECTS_DEF[e].name:e).join(', ');
     html += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:24px">${p.icon}</span>
         <div style="flex:1">
           <div style="font-weight:600">${p.name}</div>
-          <div style="font-size:11px;color:var(--text2)">${hasSkins ? '🎨 '+packSkins.length+' скінів в інвентарі' : '⚠️ Скіни видалені'}</div>
+          <div style="font-size:11px;color:var(--text2)">${effNames} · ${p.duration} хв</div>
         </div>
-        ${hasSkins ? `<button class="btn btn-small btn-success" onclick="applyPack('${id}')">⭐ Одягнути всі</button>` : `<button class="btn btn-small btn-primary" onclick="buyPack('${id}')">🔄 Відновити</button>`}
+        <button class="btn btn-small btn-success" onclick="applyPack('${id}')">🔄 Подовжити</button>
       </div>
     </div>`;
   }
@@ -1576,26 +1548,30 @@ const PALETTE_COLORS = [
 let editorColor = '#ff4466';
 let editorPixels = [];
 let editorSize = 16;
-let editorCanvasId = null;
+let editorGemType = null;
 let editorDirty = false;
 let editorInitialized = false;
 
-// ===== OPEN EDITOR FROM ACHIEVEMENTS / SHOP =====
-function openEditorWithCanvas(canvasId){
-  window.editorPendingCanvasId = canvasId;
+// ===== OPEN SKIN EDITOR =====
+function openSkinEditor(gemType){
+  const validTypes = ['ruby','sapphire','gold','emerald'];
+  if(!gemType || !validTypes.includes(gemType)){
+    const choice = prompt('Виберіть тип камінця для скіна:\n1 — Ruby\n2 — Sapphire\n3 — Gold\n4 — Emerald');
+    if(!choice) return;
+    const idx = parseInt(choice) - 1;
+    gemType = validTypes[idx] || 'ruby';
+  }
+  editorGemType = gemType;
+  editorSize = 16;
+  editorPixels = new Array(256).fill(null);
+  editorDirty = false;
+  editorInitialized = false;
   showScreen('skineditor');
 }
 
-function openCanvasEditor(canvasId){
-  const canvases = SAVE.inventory.canvases || [];
-  const canvas = canvases.find(c=>c.id===canvasId);
-  if(!canvas){ toast('❌ Холст не знайдено'); return; }
-  editorCanvasId = canvasId;
-  editorSize = canvas.size;
-  editorPixels = canvas.pixels ? [...canvas.pixels] : new Array(canvas.size*canvas.size).fill(null);
-  editorDirty = false;
-
-  // Setup canvas
+function initEditorCanvas(){
+  if(editorInitialized) return;
+  editorInitialized = true;
   const canvasEl = document.getElementById('skin-canvas');
   canvasEl.width = editorSize;
   canvasEl.height = editorSize;
@@ -1603,13 +1579,13 @@ function openCanvasEditor(canvasId){
   drawSkinCanvas();
   setupCanvasDrawing();
   updateEditorStats();
+  toast('🎨 Малюйте! ПКМ — стерти піксель.');
 }
 
 function closeEditorAndGoBack(){
   if(editorDirty){
     if(!confirm('Незбережені зміни будуть втрачені. Продовжити?')) return;
   }
-  editorCanvasId = null;
   editorInitialized = false;
   editorDirty = false;
   showScreen('achieve');
@@ -1755,30 +1731,24 @@ function clearSkinCanvas(){
 function saveSkinFromEditor(){
   const used = editorPixels.filter(p=>p!==null).length;
   if(used===0){
-    toast('❌ Холст порожній! Намалюйте щось.');
+    toast('❌ Скін порожній! Намалюйте щось.');
     return;
   }
-  if(!editorCanvasId){
-    toast('❌ Помилка: холст не обрано');
+  if(!editorGemType){
+    toast('❌ Помилка: тип камінця не обрано');
     return;
   }
-  const canvasObj = SAVE.inventory.canvases.find(c=>c.id===editorCanvasId);
-  if(!canvasObj){
-    toast('❌ Холст не знайдено');
-    return;
-  }
-  const info = CANVAS_TYPES[canvasObj.type] || {name:'Canvas'};
-  const typeName = canvasObj.type.charAt(0).toUpperCase() + canvasObj.type.slice(1);
-  const skinName = prompt('Назва скіна:', typeName+' Skin #'+(SAVE.inventory.skins.length+1));
+  const gemLabels = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
+  const label = gemLabels[editorGemType] || editorGemType;
+  const skinName = prompt('Назва скіна:', label+' Skin #'+(SAVE.inventory.skins.length+1));
   if(!skinName) return;
 
   const today = new Date().toISOString().split('T')[0];
   const skin = {
     id: 's_'+Date.now(),
     name: skinName.trim(),
-    type: canvasObj.type,
-    canvas_type: canvasObj.type,
-    gem_type: canvasObj.type,
+    type: editorGemType,
+    gem_type: editorGemType,
     size: editorSize,
     pixels: [...editorPixels],
     age_hours: 0,
@@ -1787,42 +1757,15 @@ function saveSkinFromEditor(){
   SAVE.inventory.skins.push(skin);
   SAVE.stats.skins_created = (SAVE.stats.skins_created || 0) + 1;
 
-  // Remove the used canvas from inventory
-  const idx = SAVE.inventory.canvases.indexOf(canvasObj);
-  if(idx>=0) SAVE.inventory.canvases.splice(idx,1);
-
   saveToDisk();
   updateUI();
   toast('💾 Скін "'+skin.name+'" збережено в інвентар!');
   closeEditorAndGoBack();
 }
 
-// ===== CANVAS LIST IN ACHIEVEMENTS =====
+// ===== CANVAS LIST IN ACHIEVEMENTS (ВИДАЛЕНО — більше не використовується) =====
 function updateAchieveCanvasList(){
-  const container = document.getElementById('achieve-canvas-list');
-  if(!container) return;
-  const canvases = SAVE.inventory.canvases || [];
-  if(!canvases.length){
-    container.innerHTML = `<div class="empty-state"><span class="icon">🖼</span>У вас немає холстів. Купіть в магазині!</div>`;
-    return;
-  }
-  let html = '';
-  for(let i=0;i<canvases.length;i++){
-    const c = canvases[i];
-    const info = CANVAS_TYPES[c.type] || CANVAS_TYPES[c.gem_type] || {name:c.type+' Canvas', icon:'🖼'};
-    const used = c.pixels ? c.pixels.filter(p=>p!==null).length : 0;
-    const total = c.size * c.size;
-    const gt = c.gem_type || c.type;
-    html += `<div class="shop-item" style="cursor:default">
-      <div class="shop-icon">${info.icon}</div>
-      <div class="shop-info">
-        <div class="shop-name">${info.name}</div>
-        <div class="shop-desc">${used}/${total} пікселів · ${gt}</div>
-      </div>
-      <button class="btn btn-small btn-primary" onclick="openEditorWithCanvas('${c.id}')">✏️ Малювати</button>
-    </div>`;
-  }
-  container.innerHTML = html;
+  // This function is intentionally empty — canvases have been removed from the system.
 }
 
 // ===== SKIN INVENTORY =====
@@ -1847,13 +1790,12 @@ function updateSkinList(){
       const isEquipped = eq[gt] === s.id;
       const used = s.pixels ? s.pixels.filter(p=>p!==null).length : 0;
       const total = (s.size||16) * (s.size||16);
-      const fromPack = s.from_pack ? true : false;
       html += `
       <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:${isEquipped?'2px solid var(--neon)':'1px solid transparent'}">
         <div style="display:flex;align-items:center;gap:10px">
           <canvas id="inv-skin-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;flex-shrink:0"></canvas>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}${fromPack?' <span style="font-size:10px;color:var(--neon2);font-weight:400">📦 з пака</span>':''}</div>
+            <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
             <div style="font-size:11px;color:var(--text2)">${s.color_override ? '🎨 '+s.color_override : used+'/'+total+' px'}</div>
             <div style="font-size:10px;color:var(--text3)">📅 ${s.created||'—'}</div>
           </div>
