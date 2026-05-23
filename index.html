@@ -328,37 +328,29 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="shop-category">🎨 Холсти</div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyCanvas('hero')">
+      <div class="shop-item" onclick="buyCanvas('gems')">
+        <div class="shop-icon">💎</div>
+        <div class="shop-info">
+          <div class="shop-name">Gem Canvas 16×16</div>
+          <div class="shop-desc">Скін для камінців Match-3</div>
+        </div>
+        <div class="shop-price" id="shop-price-canvas_gems">30 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('board')">
+        <div class="shop-icon">📋</div>
+        <div class="shop-info">
+          <div class="shop-name">Board Canvas 12×12</div>
+          <div class="shop-desc">Скін для поля Match-3</div>
+        </div>
+        <div class="shop-price" id="shop-price-canvas_board">25 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('frame')">
         <div class="shop-icon">🖼</div>
         <div class="shop-info">
-          <div class="shop-name">Hero Canvas 16×16</div>
-          <div class="shop-desc">Скін для ігрового поля Match-3</div>
+          <div class="shop-name">Frame Canvas 8×8</div>
+          <div class="shop-desc">Скін для рамки/фону</div>
         </div>
-        <div class="shop-price" id="shop-price-canvas_hero">30 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyCanvas('enemy')">
-        <div class="shop-icon">👾</div>
-        <div class="shop-info">
-          <div class="shop-name">Enemy Canvas 12×12</div>
-          <div class="shop-desc">Скін для ворогів/перешкод</div>
-        </div>
-        <div class="shop-price" id="shop-price-canvas_enemy">25 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyCanvas('block')">
-        <div class="shop-icon">🧱</div>
-        <div class="shop-info">
-          <div class="shop-name">Block Canvas 8×8</div>
-          <div class="shop-desc">Скін для блоків</div>
-        </div>
-        <div class="shop-price" id="shop-price-canvas_block">15 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyCanvas('coin')">
-        <div class="shop-icon">🪙</div>
-        <div class="shop-info">
-          <div class="shop-name">Coin Canvas 6×6</div>
-          <div class="shop-desc">Скін для монет</div>
-        </div>
-        <div class="shop-price" id="shop-price-canvas_coin">10 🪙</div>
+        <div class="shop-price" id="shop-price-canvas_frame">15 🪙</div>
       </div>
     </div>
     <div class="shop-category">⏱ Піксель-години</div>
@@ -858,10 +850,9 @@ function endMatch3(){
 
 // ===== SHOP =====
 const CANVAS_TYPES = {
-  hero:  {size:16, price:30, name:'Hero Canvas 16×16', icon:'🖼'},
-  enemy: {size:12, price:25, name:'Enemy Canvas 12×12', icon:'👾'},
-  block: {size:8,  price:15, name:'Block Canvas 8×8',   icon:'🧱'},
-  coin:  {size:6,  price:10, name:'Coin Canvas 6×6',    icon:'🪙'}
+  gems:   {size:16, price:30, name:'Gem Canvas 16×16', icon:'💎'},
+  board:  {size:12, price:25, name:'Board Canvas 12×12', icon:'📋'},
+  frame:  {size: 8, price:15, name:'Frame Canvas 8×8', icon:'🖼'},
 };
 
 function buyCanvas(type){
