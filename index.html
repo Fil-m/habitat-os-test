@@ -87,21 +87,73 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0}
 .m3-board{display:grid;gap:2px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
 .m3-cell{width:40px;height:40px;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
-.m3-cell.bw{filter:grayscale(1);opacity:0.6}
-.m3-cell.bw.removed{opacity:0;transform:scale(0.5)}
-.m3-cell.selected{border:2px solid var(--neon);box-shadow:0 0 12px rgba(0,240,255,0.5);transform:scale(1.05);z-index:2}
-.m3-cell.removed{opacity:0;transform:scale(0.3);pointer-events:none}
-.m3-cell.falling{animation:fall 0.2s ease-in}
-@keyframes fall{from{transform:translateY(-46px);opacity:0.3}to{transform:translateY(0);opacity:1}}
-.m3-cell .gem{width:32px;height:32px;border-radius:50%;box-shadow:inset 0 -3px 6px rgba(0,0,0,0.3),inset 0 3px 6px rgba(255,255,255,0.15);transition:all .15s}
-.m3-cell .gem.g0{background:radial-gradient(circle at 35% 35%,#ff6688,#cc2244)}/* ruby */
-.m3-cell .gem.g1{background:radial-gradient(circle at 35% 35%,#66aaff,#2266cc)}/* sapphire */
-.m3-cell .gem.g2{background:radial-gradient(circle at 35% 35%,#ffee66,#ccaa22)}/* gold */
-.m3-cell .gem.g3{background:radial-gradient(circle at 35% 35%,#66ffaa,#22cc66)}/* emerald */
-.m3-cell.bw .gem.g0{background:#555!important;box-shadow:none!important}
-.m3-cell.bw .gem.g1{background:#666!important;box-shadow:none!important}
-.m3-cell.bw .gem.g2{background:#777!important;box-shadow:none!important}
-.m3-cell.bw .gem.g3{background:#888!important;box-shadow:none!important}
+.m3-cell.bw{opacity:0.85}
+/* MATCH-3 GEMS — distinct shapes + high contrast */
+.m3-cell .gem{
+  width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  transition:all 0.15s;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+/* Ruby — 🔴 RED CIRCLE */
+.m3-cell .gem.g0{
+  background:radial-gradient(circle at 35% 35%,#ff2222,#cc0000);
+  border-radius:50%;
+  border:2px solid #ff4444;
+}
+/* Sapphire — 🔵 BLUE DIAMOND */
+.m3-cell .gem.g1{
+  background:radial-gradient(circle at 35% 35%,#2266ff,#0033cc);
+  border-radius:2px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  border:2px solid #4488ff;
+}
+/* Gold — 🟡 YELLOW SQUARE */
+.m3-cell .gem.g2{
+  background:radial-gradient(circle at 35% 35%,#ffdd00,#cc9900);
+  border-radius:2px;
+  border:2px solid #ffee44;
+}
+/* Emerald — 🟩 GREEN TRIANGLE */
+.m3-cell .gem.g3{
+  background:radial-gradient(circle at 35% 35%,#00cc44,#008822);
+  border-radius:2px;
+  clip-path:polygon(50% 5%,95% 90%,5% 90%);
+  border:none;
+}
+
+/* B&W MODE — distinct patterns by shape only */
+.m3-cell.bw .gem.g0{
+  background:#555!important;border-radius:50%!important;border:2px solid #777;
+  transform:translate(-50%,-50%)!important;
+  clip-path:none!important;
+}
+.m3-cell.bw .gem.g1{
+  background:#555!important;border-radius:2px!important;
+  transform:translate(-50%,-50%) rotate(45deg)!important;
+  border:2px solid #888;
+  clip-path:none!important;
+  width:60%;height:60%;
+}
+.m3-cell.bw .gem.g2{
+  background:#555!important;border-radius:2px!important;
+  transform:translate(-50%,-50%)!important;
+  border:2px solid #999;
+  clip-path:none!important;
+}
+.m3-cell.bw .gem.g3{
+  background:#555!important;border-radius:2px!important;
+  clip-path:polygon(50% 5%,95% 90%,5% 90%)!important;
+  transform:translate(-50%,-50%)!important;
+  border:none!important;
+}
+/* Add subtle cross pattern to B&W gems for texture */
+.m3-cell.bw .gem::after{
+  content:'';position:absolute;top:2px;left:2px;right:2px;bottom:2px;
+  background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,0.05) 2px,rgba(255,255,255,0.05) 4px);
+  border-radius:inherit;
+  clip-path:inherit;
+}
 
 /* Match-3 results */
 .m3-result{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,13,25,0.92);z-index:50;padding:24px;text-align:center}
