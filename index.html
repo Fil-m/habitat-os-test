@@ -1646,6 +1646,7 @@ function buyEffect(effectId, pricePerMin){
   }
   saveToDisk();
   updateUI();
+  updateEffectsUI();
   const def = EFFECTS_DEF[effectId];
   toast('✅ '+(def?def.name:effectId)+' активовано на '+minutes+' хв!');
 }
@@ -2321,6 +2322,7 @@ function equipSkinById(skinId, gemType){
   SAVE.equipped_skins[gemType] = skin.id;
   saveToDisk();
   updateUI();
+  updateSkinList();
   toast('⭐ "'+skin.name+'" екіпіровано для '+gemType+'!');
   refreshGameSkins();
 }
