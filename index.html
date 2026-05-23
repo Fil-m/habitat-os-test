@@ -289,6 +289,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <span class="label">Ачівки</span>
       </button>
     </div>
+    <div id="dash-equipped-skin" style="margin:4px 16px;padding:8px 12px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--surface2);text-align:center;font-size:13px"></div>
     <div style="flex:1;min-height:40px"></div>
   </div>
 
@@ -327,13 +328,37 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="shop-category">🎨 Холсти</div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyItem('canvas_hero')">
+      <div class="shop-item" onclick="buyCanvas('hero')">
         <div class="shop-icon">🖼</div>
         <div class="shop-info">
           <div class="shop-name">Hero Canvas 16×16</div>
-          <div class="shop-desc">Базовий холст для створення скіну</div>
+          <div class="shop-desc">Скін для ігрового поля Match-3</div>
         </div>
         <div class="shop-price" id="shop-price-canvas_hero">30 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('enemy')">
+        <div class="shop-icon">👾</div>
+        <div class="shop-info">
+          <div class="shop-name">Enemy Canvas 12×12</div>
+          <div class="shop-desc">Скін для ворогів/перешкод</div>
+        </div>
+        <div class="shop-price" id="shop-price-canvas_enemy">25 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('block')">
+        <div class="shop-icon">🧱</div>
+        <div class="shop-info">
+          <div class="shop-name">Block Canvas 8×8</div>
+          <div class="shop-desc">Скін для блоків</div>
+        </div>
+        <div class="shop-price" id="shop-price-canvas_block">15 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('coin')">
+        <div class="shop-icon">🪙</div>
+        <div class="shop-info">
+          <div class="shop-name">Coin Canvas 6×6</div>
+          <div class="shop-desc">Скін для монет</div>
+        </div>
+        <div class="shop-price" id="shop-price-canvas_coin">10 🪙</div>
       </div>
     </div>
     <div class="shop-category">⏱ Піксель-години</div>
@@ -341,16 +366,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="shop-item" onclick="buyItem('pixels_100')">
         <div class="shop-icon">🎨</div>
         <div class="shop-info">
-          <div class="shop-name">100 пікселів</div>
-          <div class="shop-desc">+100 до ліміту пікселів для редактора</div>
+          <div class="shop-name">100 піксель-годин</div>
+          <div class="shop-desc">+100 до ліміту для редактора</div>
         </div>
         <div class="shop-price" id="shop-price-pixels_100">8 🪙</div>
       </div>
       <div class="shop-item" onclick="buyItem('pixels_500')">
         <div class="shop-icon">🎨🎨</div>
         <div class="shop-info">
-          <div class="shop-name">500 пікселів</div>
-          <div class="shop-desc">+500 до ліміту пікселів (вигідно!)</div>
+          <div class="shop-name">500 піксель-годин</div>
+          <div class="shop-desc">+500 до ліміту (вигідно!)</div>
         </div>
         <div class="shop-price" id="shop-price-pixels_500">35 🪙</div>
       </div>
@@ -401,7 +426,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
     <div class="card">
-      <div class="card-title">🖼 Мої скіни</div>
+      <div class="card-title">🖼 Інвентар скінів</div>
       <div id="skin-list">
         <div class="empty-state">
           <span class="icon">🎨</span>
@@ -414,26 +439,33 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <!-- Skin Editor Screen -->
   <div id="screen-skineditor" class="screen">
     <div class="header">
-      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <button class="btn btn-secondary btn-small" id="editor-back-btn" onclick="showScreen('dashboard')">← Назад</button>
       <h1 style="font-size:15px">🎨 РЕДАКТОР</h1>
       <div class="resources">
         <span class="resource">🎨<span class="val" id="editor-pixels-left">0</span></span>
       </div>
     </div>
-    <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / <span id="editor-pixel-max">256</span></div>
-    <div class="editor-wrap">
-      <div class="editor-canvas-wrap">
-        <canvas id="skin-canvas" width="16" height="16"></canvas>
-      </div>
-      <div class="editor-palette" id="editor-palette"></div>
-      <div class="editor-tools">
-        <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
-        <button class="btn btn-secondary btn-small" onclick="saveSkinDraft()">💾 Чернетка</button>
-        <button class="btn btn-success btn-small" onclick="equipSkin()">⭐ Екіпірувати</button>
-        <button class="btn btn-danger btn-small" onclick="sellSkin()">💰 Продати</button>
-      </div>
-      <div style="font-size:12px;color:var(--text2);text-align:center;margin-top:4px">
-        Оберіть колір → клікніть на піксель
+    <!-- Canvas selection view (shown when no canvas is being edited) -->
+    <div id="editor-canvas-select">
+      <div class="editor-stats" id="editor-canvas-stats" style="padding:8px 16px;text-align:center;font-size:13px;color:var(--text2)">Оберіть холст для редагування</div>
+      <div id="editor-canvas-list" style="margin:0 16px"></div>
+    </div>
+    <!-- Drawing view (shown when editing a canvas) -->
+    <div id="editor-drawing-view" style="display:none">
+      <button class="btn btn-secondary btn-small" onclick="editorBackToList()" style="margin:4px 16px">↩️ До списку холстів</button>
+      <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / 16 · 🎨 500 px-год</div>
+      <div class="editor-wrap">
+        <div class="editor-canvas-wrap">
+          <canvas id="skin-canvas" width="16" height="16"></canvas>
+        </div>
+        <div class="editor-palette" id="editor-palette"></div>
+        <div class="editor-tools">
+          <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
+          <button class="btn btn-success btn-small" onclick="saveSkinFromEditor()">💾 Зберегти в інвентар</button>
+        </div>
+        <div style="font-size:12px;color:var(--text2);text-align:center;margin-top:4px">
+          Клік = 1 піксель-година · ПКМ = стерти
+        </div>
       </div>
     </div>
     <div style="flex:1;min-height:20px"></div>
@@ -484,6 +516,7 @@ const DEFAULT_SAVE = {
   resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
   inventory: {canvases:[], skins:[], owned_achievements:[]},
   equipped_skin: null,
+  achievements: [],
   stats: {matches:0, earned:0, record:0},
   chat: [],
   match3_state: {daily_matches:0}
@@ -549,6 +582,16 @@ function updateUI(){
     document.getElementById('stat-earned').textContent = SAVE.stats.earned;
     document.getElementById('stat-record').textContent = SAVE.stats.record;
   }
+  // Equipped skin display
+  const eqEl = document.getElementById('dash-equipped-skin');
+  if(eqEl){
+    if(SAVE.equipped_skin){
+      const info = CANVAS_TYPES[SAVE.equipped_skin.type] || {icon:'🎨'};
+      eqEl.innerHTML = `⭐ Екіпіровано: <strong>${SAVE.equipped_skin.name}</strong> ${info.icon}`;
+    }else{
+      eqEl.innerHTML = `🎨 Скін не екіпіровано — Match-3 у <strong>чорно-білому</strong> режимі`;
+    }
+  }
   updateAchList();
   updateSkinList();
 }
@@ -562,7 +605,13 @@ function showScreen(id){
     b.classList.toggle('active', b.dataset.screen===id);
   });
   if(id==='match3' && !window._m3Started) startMatch3();
-  if(id==='skineditor') initEditor();
+  if(id==='skineditor') {
+    renderCanvasList();
+    // Ensure we're in canvas selection mode
+    document.getElementById('editor-canvas-select').style.display = 'block';
+    document.getElementById('editor-drawing-view').style.display = 'none';
+    document.getElementById('editor-back-btn').onclick = function(){ showScreen('dashboard'); };
+  }
   if(id==='chat') renderChat();
   updateUI();
 }
@@ -808,16 +857,35 @@ function endMatch3(){
 }
 
 // ===== SHOP =====
+const CANVAS_TYPES = {
+  hero:  {size:16, price:30, name:'Hero Canvas 16×16', icon:'🖼'},
+  enemy: {size:12, price:25, name:'Enemy Canvas 12×12', icon:'👾'},
+  block: {size:8,  price:15, name:'Block Canvas 8×8',   icon:'🧱'},
+  coin:  {size:6,  price:10, name:'Coin Canvas 6×6',    icon:'🪙'}
+};
+
+function buyCanvas(type){
+  const info = CANVAS_TYPES[type];
+  if(!info) return;
+  const r = SAVE.resources;
+  if(r.gold < info.price){ toast('❌ Недостатньо Gold!'); return; }
+  r.gold -= info.price;
+  const canvasId = 'c_'+Date.now();
+  const totalPixels = info.size * info.size;
+  SAVE.inventory.canvases.push({
+    id: canvasId,
+    type: type,
+    size: info.size,
+    pixels: new Array(totalPixels).fill(null)
+  });
+  saveToDisk();
+  updateUI();
+  toast("✅ "+info.name+" придбано! З'явився в редакторі.");
+}
+
 function buyItem(itemId){
   const r = SAVE.resources;
-  if(itemId==='canvas_hero'){
-    if(r.gold < 30){ toast('❌ Недостатньо Gold!'); return; }
-    r.gold -= 30;
-    SAVE.inventory.canvases.push({type:'hero', bought:Date.now()});
-    saveToDisk();
-    updateUI();
-    toast('✅ Hero Canvas придбано!');
-  }else if(itemId==='pixels_100'){
+  if(itemId==='pixels_100'){
     if(r.gold < 8){ toast('❌ Недостатньо Gold!'); return; }
     r.gold -= 8;
     r.pixel_hours += 100;
@@ -880,70 +948,84 @@ function updateAchList(){
   container.innerHTML=html;
 }
 
-function updateSkinList(){
-  const container = document.getElementById('skin-list');
-  if(!container) return;
-  const skins = SAVE.inventory.skins || [];
-  if(!skins.length){
-    container.innerHTML='<div class="empty-state"><span class="icon">🎨</span>Створіть скін у редакторі</div>';
-    return;
-  }
-  let html='<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">';
-  for(let i=0;i<skins.length;i++){
-    const s = skins[i];
-    const isEquipped = SAVE.equipped_skin && SAVE.equipped_skin.id===s.id;
-    html+=`<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:8px;text-align:center;border:${isEquipped?'2px solid var(--neon)':'2px solid transparent'}">
-      <canvas id="mini-skin-${i}" width="16" height="16" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;display:block;margin:0 auto;background:#1a1d33;border-radius:4px"></canvas>
-      <div style="font-size:11px;margin-top:4px;color:var(--text2)">${isEquipped?'⭐ Екіпіровано':'Скін #'+(i+1)}</div>
-    </div>`;
-  }
-  html+='</div>';
-  container.innerHTML=html;
-  // Render mini skins
-  setTimeout(()=>{
-    for(let i=0;i<skins.length;i++){
-      const canvas = document.getElementById('mini-skin-'+i);
-      if(canvas){
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.createImageData(16,16);
-        const pixels = skins[i].pixels;
-        for(let p=0;p<256;p++){
-          const color = pixels && pixels[p] ? pixels[p] : '#1a1d33';
-          const [r,g,b] = hexToRgb(color);
-          imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
-        }
-        ctx.putImageData(imageData,0,0);
-      }
-    }
-  },50);
-}
-
 // ===== SKIN EDITOR =====
 const PALETTE_COLORS = [
   '#ff4466','#ff8844','#ffcc44','#44dd88','#44aaff','#8844ff',
   '#ffffff','#cccccc','#888888','#444444','#1a1d33','#0b0d19'
 ];
 let editorColor = '#ff4466';
-let editorPixels = new Array(256).fill(null);
+let editorPixels = [];
+let editorSize = 16;
+let editorCanvasId = null;
 let editorDirty = false;
 let editorInitialized = false;
 
-function initEditor(){
-  if(editorInitialized) return;
-  editorInitialized = true;
-  buildPalette();
-  const canvas = document.getElementById('skin-canvas');
-  if(!canvas) return;
-  // Load existing skin if any
-  const equipped = SAVE.equipped_skin;
-  if(equipped && equipped.pixels){
-    for(let i=0;i<256;i++){
-      editorPixels[i] = equipped.pixels[i] || null;
-    }
+// ===== CANVAS SELECTION =====
+function renderCanvasList(){
+  const container = document.getElementById('editor-canvas-list');
+  if(!container) return;
+  const canvases = SAVE.inventory.canvases || [];
+  if(!canvases.length){
+    container.innerHTML = `
+      <div class="empty-state">
+        <span class="icon">🖼</span>
+        🎨 У вас немає холстів. Купіть в магазині!
+      </div>
+      <button class="btn btn-primary btn-block" onclick="showScreen('shop')" style="margin:12px 0">
+        🛒 Перейти в магазин
+      </button>`;
+    return;
   }
+  let html = '';
+  for(let i=0;i<canvases.length;i++){
+    const c = canvases[i];
+    const info = CANVAS_TYPES[c.type] || {name:c.type+' Canvas', icon:'🖼'};
+    const used = c.pixels ? c.pixels.filter(p=>p!==null).length : 0;
+    const total = c.size * c.size;
+    html += `<div class="shop-item" onclick="openCanvasEditor('${c.id}')" style="cursor:pointer">
+      <div class="shop-icon">${info.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${info.name}</div>
+        <div class="shop-desc">${used}/${total} пікселів заповнено</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);white-space:nowrap">✏ Редагувати</div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function openCanvasEditor(canvasId){
+  const canvases = SAVE.inventory.canvases || [];
+  const canvas = canvases.find(c=>c.id===canvasId);
+  if(!canvas){ toast('❌ Холст не знайдено'); return; }
+  editorCanvasId = canvasId;
+  editorSize = canvas.size;
+  editorPixels = canvas.pixels ? [...canvas.pixels] : new Array(canvas.size*canvas.size).fill(null);
+  editorDirty = false;
+
+  // Switch to drawing view
+  document.getElementById('editor-canvas-select').style.display = 'none';
+  document.getElementById('editor-drawing-view').style.display = 'flex';
+  document.getElementById('editor-drawing-view').style.flexDirection = 'column';
+  document.getElementById('editor-back-btn').onclick = editorBackToList;
+
+  // Setup canvas
+  const canvasEl = document.getElementById('skin-canvas');
+  canvasEl.width = editorSize;
+  canvasEl.height = editorSize;
+  buildPalette();
   drawSkinCanvas();
   setupCanvasDrawing();
   updateEditorStats();
+}
+
+function editorBackToList(){
+  document.getElementById('editor-canvas-select').style.display = 'block';
+  document.getElementById('editor-drawing-view').style.display = 'none';
+  document.getElementById('editor-back-btn').onclick = function(){ showScreen('dashboard'); };
+  editorCanvasId = null;
+  editorInitialized = false;
+  renderCanvasList();
 }
 
 function buildPalette(){
@@ -966,7 +1048,7 @@ function buildPalette(){
 
 function setupCanvasDrawing(){
   const canvas = document.getElementById('skin-canvas');
-  const size = 16;
+  const size = editorSize;
   let painting = false;
 
   function getPixel(e){
@@ -986,27 +1068,35 @@ function setupCanvasDrawing(){
 
   function paint(idx){
     if(idx===null) return;
-    const maxPixels = Math.min(256, SAVE.resources.pixel_hours);
-    const used = editorPixels.filter(p=>p!==null).length;
-    if(editorPixels[idx]===null && used>=maxPixels){
-      toast('❌ Недостатньо піксель-годин!');
+    // Check if pixel is already colored
+    if(editorPixels[idx]!==null){
+      // Just change color (free)
+      editorPixels[idx] = editorColor;
+      editorDirty = true;
+      drawSkinCanvas();
+      updateEditorStats();
       return;
     }
+    // Need pixel_hours to paint new pixel
+    if(SAVE.resources.pixel_hours <= 0){
+      toast('❌ Недостатньо піксель-годин! Купіть в магазині.');
+      return;
+    }
+    SAVE.resources.pixel_hours -= 1;
     editorPixels[idx] = editorColor;
     editorDirty = true;
     drawSkinCanvas();
     updateEditorStats();
+    saveToDisk();
   }
 
   function erase(idx){
     if(idx===null) return;
     if(editorPixels[idx]!==null){
-      SAVE.resources.pixel_hours++;
       editorPixels[idx]=null;
       editorDirty=true;
       drawSkinCanvas();
       updateEditorStats();
-      saveToDisk();
     }
   }
 
@@ -1029,15 +1119,16 @@ function setupCanvasDrawing(){
 function drawSkinCanvas(){
   const canvas = document.getElementById('skin-canvas');
   const ctx = canvas.getContext('2d');
-  const size = 16;
+  const size = editorSize;
+  const total = size * size;
   const imageData = ctx.createImageData(size,size);
-  for(let i=0;i<256;i++){
+  for(let i=0;i<total;i++){
     const color = editorPixels[i];
     let r,g,b;
     if(color){
       [r,g,b] = hexToRgb(color);
     }else{
-      r=26;g=29;b=51; // bg3 color
+      r=26;g=29;b=51;
     }
     imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
   }
@@ -1058,111 +1149,171 @@ function drawSkinCanvas(){
 
 function updateEditorStats(){
   const used = editorPixels.filter(p=>p!==null).length;
-  const maxP = Math.min(256, SAVE.resources.pixel_hours);
-  document.getElementById('editor-stats').innerHTML = `Пікселів використано: ${used} / <span id="editor-pixel-max">${maxP}</span>`;
-  document.getElementById('editor-pixels-left').textContent = maxP - used;
-  // Re-set the span content
-  const span = document.getElementById('editor-pixel-max');
-  if(span) span.textContent = maxP;
+  const total = editorSize * editorSize;
+  document.getElementById('editor-stats').innerHTML = `Пікселів використано: ${used} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год`;
+  document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
 }
 
 function clearSkinCanvas(){
   if(!confirm('Очистити весь холст?')) return;
-  for(let i=0;i<256;i++){
-    if(editorPixels[i]!==null){
-      SAVE.resources.pixel_hours++;
-      editorPixels[i]=null;
-    }
+  for(let i=0;i<editorPixels.length;i++){
+    editorPixels[i]=null;
   }
   editorDirty=true;
   drawSkinCanvas();
   updateEditorStats();
-  saveToDisk();
   toast('🗑 Очищено');
 }
 
-function saveSkinDraft(){
-  // Count pixels used
+function saveSkinFromEditor(){
   const used = editorPixels.filter(p=>p!==null).length;
   if(used===0){
-    toast('❌ Холст порожній!');
+    toast('❌ Холст порожній! Намалюйте щось.');
     return;
   }
+  if(!editorCanvasId){
+    toast('❌ Помилка: холст не обрано');
+    return;
+  }
+  const canvasObj = SAVE.inventory.canvases.find(c=>c.id===editorCanvasId);
+  if(!canvasObj){
+    toast('❌ Холст не знайдено');
+    return;
+  }
+  const info = CANVAS_TYPES[canvasObj.type] || {name:'Canvas'};
+  const typeName = canvasObj.type.charAt(0).toUpperCase() + canvasObj.type.slice(1);
+  const skinName = prompt('Назва скіна:', typeName+' Skin #'+(SAVE.inventory.skins.length+1));
+  if(!skinName) return;
+
+  const today = new Date().toISOString().split('T')[0];
   const skin = {
-    id: Date.now(),
+    id: 's_'+Date.now(),
+    name: skinName.trim(),
+    type: canvasObj.type,
+    canvas_type: canvasObj.type,
+    size: editorSize,
     pixels: [...editorPixels],
-    created: Date.now()
+    age_hours: 0,
+    created: today
   };
   SAVE.inventory.skins.push(skin);
+
+  // Remove the used canvas from inventory
+  const idx = SAVE.inventory.canvases.indexOf(canvasObj);
+  if(idx>=0) SAVE.inventory.canvases.splice(idx,1);
+
   saveToDisk();
   updateUI();
-  toast('💾 Чернетку збережено!');
+  toast('💾 Скін "'+skin.name+'" збережено в інвентар!');
+  editorBackToList();
 }
 
-function equipSkin(){
-  const used = editorPixels.filter(p=>p!==null).length;
-  if(used===0){
-    toast('❌ Холст порожній!');
+// ===== SKIN INVENTORY =====
+function updateSkinList(){
+  const container = document.getElementById('skin-list');
+  if(!container) return;
+  const skins = SAVE.inventory.skins || [];
+  if(!skins.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">🎨</span>Створіть скін у редакторі</div>';
     return;
   }
-  // Check if current skin is already saved
-  let skin = SAVE.inventory.skins.find(s=>{
-    if(!s.pixels) return false;
-    for(let i=0;i<256;i++){
-      if(s.pixels[i]!==editorPixels[i]) return false;
-    }
-    return true;
-  });
-  if(!skin){
-    // Save as new
-    skin = {
-      id: Date.now(),
-      pixels: [...editorPixels],
-      created: Date.now()
-    };
-    SAVE.inventory.skins.push(skin);
+  let html = '';
+  for(let i=0;i<skins.length;i++){
+    const s = skins[i];
+    const isEquipped = SAVE.equipped_skin && SAVE.equipped_skin.id===s.id;
+    const info = CANVAS_TYPES[s.type] || {name:s.type, icon:'🎨'};
+    const used = s.pixels ? s.pixels.filter(p=>p!==null).length : 0;
+    html += `
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;border:${isEquipped?'2px solid var(--neon)':'1px solid transparent'}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <canvas id="inv-skin-${i}" width="${s.size||16}" height="${s.size||16}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;flex-shrink:0"></canvas>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
+          <div style="font-size:11px;color:var(--text2)">${info.icon} ${info.name} · ${used}/${s.size*s.size} px</div>
+          <div style="font-size:10px;color:var(--text3)">📅 ${s.created}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        ${isEquipped
+          ? `<button class="btn btn-small btn-secondary" onclick="unequipSkin()" style="flex:1">⬇ Зняти</button>`
+          : `<button class="btn btn-small btn-success" onclick="equipSkinById('${s.id}')" style="flex:1">✅ Екіпірувати</button>`
+        }
+        <button class="btn btn-small btn-danger" onclick="sellSkinById('${s.id}')" style="flex:1">💰 Продати</button>
+        <button class="btn btn-small btn-secondary" onclick="deleteSkinById('${s.id}')" style="flex:0">🗑</button>
+      </div>
+    </div>`;
   }
-  SAVE.equipped_skin = skin;
-  SAVE.resources.pixel_hours = Math.min(SAVE.resources.pixel_hours + (256-used), 9999);
+  container.innerHTML = html;
+
+  // Render mini skins
+  setTimeout(()=>{
+    for(let i=0;i<skins.length;i++){
+      const canvas = document.getElementById('inv-skin-'+i);
+      if(canvas){
+        const ctx = canvas.getContext('2d');
+        const s = skins[i];
+        const sz = s.size || 16;
+        const total = sz * sz;
+        const imageData = ctx.createImageData(sz, sz);
+        const pixels = s.pixels || [];
+        for(let p=0;p<total;p++){
+          const color = pixels[p] ? pixels[p] : '#1a1d33';
+          const [r,g,b] = hexToRgb(color);
+          imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+        }
+        ctx.putImageData(imageData,0,0);
+      }
+    }
+  },50);
+}
+
+function equipSkinById(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  SAVE.equipped_skin = {id: skin.id, name: skin.name, type: skin.type, pixels: [...skin.pixels], size: skin.size};
   saveToDisk();
   updateUI();
-  updateEditorStats();
-  toast('⭐ Скін екіпіровано! Кольори повернуто!');
+  toast('⭐ "'+skin.name+'" екіпіровано! Match-3 кольоровий!');
 }
 
-function sellSkin(){
-  const used = editorPixels.filter(p=>p!==null).length;
-  if(used===0){
-    toast('❌ Немає що продавати!');
-    return;
-  }
-  if(!confirm('Продати поточний скін за '+(used*2)+' Gold? Пікселі повернуться.')){
-    return;
-  }
-  const gold = used * 2;
-  SAVE.resources.gold += gold;
-  SAVE.resources.pixel_hours += used;
-  for(let i=0;i<256;i++) editorPixels[i]=null;
-  // Remove from saved skins if exists
-  let skin = SAVE.inventory.skins.find(s=>{
-    if(!s.pixels) return false;
-    for(let i=0;i<256;i++){
-      if(s.pixels[i]!==editorPixels[i]) return false;
-    }
-    return true;
-  });
-  if(skin){
-    const idx = SAVE.inventory.skins.indexOf(skin);
-    if(idx>=0) SAVE.inventory.skins.splice(idx,1);
-  }
-  if(SAVE.equipped_skin && SAVE.equipped_skin.id===skin?.id){
+function unequipSkin(){
+  SAVE.equipped_skin = null;
+  saveToDisk();
+  updateUI();
+  toast('⬇ Скін знято. Match-3 чорно-білий.');
+}
+
+function sellSkinById(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  const used = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
+  const price = used * 2;
+  if(!confirm('Продати "'+skin.name+'" за '+price+' 🪙?')) return;
+  SAVE.resources.gold += price;
+  // Remove from inventory
+  const idx = SAVE.inventory.skins.indexOf(skin);
+  if(idx>=0) SAVE.inventory.skins.splice(idx,1);
+  // Unequip if equipped
+  if(SAVE.equipped_skin && SAVE.equipped_skin.id===skin.id){
     SAVE.equipped_skin = null;
   }
   saveToDisk();
   updateUI();
-  drawSkinCanvas();
-  updateEditorStats();
-  toast('💰 Скін продано за '+gold+' Gold!');
+  toast('💰 "'+skin.name+'" продано за '+price+' Gold!');
+}
+
+function deleteSkinById(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  if(!confirm('Видалити "'+skin.name+'" безповоротно?')) return;
+  const idx = SAVE.inventory.skins.indexOf(skin);
+  if(idx>=0) SAVE.inventory.skins.splice(idx,1);
+  if(SAVE.equipped_skin && SAVE.equipped_skin.id===skin.id){
+    SAVE.equipped_skin = null;
+  }
+  saveToDisk();
+  updateUI();
+  toast('🗑 "'+skin.name+'" видалено');
 }
 
 function hexToRgb(hex){
@@ -1279,12 +1430,6 @@ window.addEventListener('resize',()=>{
 
 // ===== INIT =====
 updateUI();
-// Pre-fill editor with equipped skin if it exists
-if(SAVE.equipped_skin && SAVE.equipped_skin.pixels){
-  for(let i=0;i<256;i++){
-    editorPixels[i] = SAVE.equipped_skin.pixels[i] || null;
-  }
-}
 console.log('⬡ Habitat OS loaded');
 console.log('Save data:', SAVE);
 </script>
