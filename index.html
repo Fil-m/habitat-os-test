@@ -307,53 +307,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <div id="screen-dashboard" class="screen active">
     <div class="header">
       <h1>⬡ HABITAT OS</h1>
-      <div class="resources" id="header-resources">
+      <div class="resources">
         <span class="resource">🪙<span class="val" id="hdr-gold">0</span></span>
         <span class="resource">💎<span class="val" id="hdr-ruby">0</span></span>
+        <span class="resource">🟡<span class="val" id="hdr-sapphire">0</span></span>
       </div>
     </div>
-    <div class="hero-section">
-      <h2>⬡ HABITAT OS</h2>
-      <p>Твоя піксельна пригода починається тут</p>
-      <button class="big-play" onclick="showScreen('match3')">🎮 ГРАТИ</button>
-    </div>
-    <div class="resource-grid">
-      <div class="resource-card">
-        <div class="icon">🪙</div>
-        <div class="label">Gold</div>
-        <div class="value" id="dash-gold">0</div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px">
+      <div style="font-size:48px;text-align:center;line-height:1.2">
+        ⬡<br>
+        <span style="font-size:24px;font-weight:700;color:var(--neon)">HABITAT OS</span>
       </div>
-      <div class="resource-card">
-        <div class="icon">💎</div>
-        <div class="label">Ruby</div>
-        <div class="value" id="dash-ruby">0</div>
+      <button class="big-play" onclick="startRandomGame()">🎮 ГРАТИ РАНДОМ</button>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="btn btn-primary" onclick="showScreen('shop')" style="padding:12px 24px">🏪 Магазин</button>
+        <button class="btn btn-secondary" onclick="showScreen('chat')" style="padding:12px 24px">💬 Чат</button>
       </div>
-      <div class="resource-card">
-        <div class="icon">🌀</div>
-        <div class="label">Sapphire</div>
-        <div class="value" id="dash-sapphire">0</div>
-      </div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">Твоя піксельна пригода</div>
     </div>
-    <div class="dash-buttons">
-      <button class="dash-btn shop" onclick="showScreen('shop')">
-        <span class="icon">🏪</span>
-        <span class="label">Магазин</span>
-      </button>
-      <button class="dash-btn shop" onclick="showScreen('shop')">
-        <span class="icon">🎨</span>
-        <span class="label">Холсти</span>
-      </button>
-      <button class="dash-btn chat" onclick="showScreen('chat')">
-        <span class="icon">💬</span>
-        <span class="label">Чат</span>
-      </button>
-      <button class="dash-btn" onclick="showScreen('achieve')">
-        <span class="icon">🏆</span>
-        <span class="label">Ачівки</span>
-      </button>
-    </div>
-    <div id="dash-equipped-skin" style="margin:4px 16px;padding:8px 12px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--surface2);text-align:center;font-size:13px"></div>
-    <div style="flex:1;min-height:40px"></div>
   </div>
 
   <!-- Match-3 Screen -->
@@ -387,6 +358,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <h1 style="font-size:15px">🏪 МАГАЗИН</h1>
       <div class="resources">
         <span class="resource">🪙<span class="val" id="shop-gold">0</span></span>
+        <span class="resource">💎<span class="val" id="shop-ruby">0</span></span>
+        <span class="resource">🟡<span class="val" id="shop-sapphire">0</span></span>
       </div>
     </div>
     <div class="shop-category" style="display:flex;align-items:center;gap:8px">
@@ -646,8 +619,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <div id="screen-achieve" class="screen">
     <div class="header">
       <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
-      <h1 style="font-size:15px">🏆 АЧІВКИ</h1>
+      <h1 style="font-size:15px">⚙ МАЙНЕРИ</h1>
       <button class="btn btn-small btn-gold" onclick="showScreen('shop')">🛒</button>
+    </div>
+
+    <!-- Miner Selector -->
+    <div class="card" style="padding:10px 16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-small btn-primary" onclick="selectMiner('match3')" id="miner-btn-match3" style="flex:1;min-width:100px">🎮 Match-3</button>
+        <button class="btn btn-small btn-secondary" disabled style="flex:1;min-width:100px;opacity:0.5">🔜 Незабаром</button>
+      </div>
     </div>
 
     <!-- Section 1: Statistics -->
@@ -846,13 +827,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <span class="icon">🏪</span> Магазин
     </button>
     <button class="nav-btn" data-screen="achieve" onclick="showScreen('achieve')">
-      <span class="icon">🏆</span> Ачівки
+      <span class="icon">⚙</span> Майнери
     </button>
     <button class="nav-btn" data-screen="chat" onclick="showScreen('chat')">
       <span class="icon">💬</span> Чат
-    </button>
-    <button class="nav-btn" data-screen="profile" onclick="showScreen('profile')">
-      <span class="icon">👤</span> Профіль
     </button>
   </nav>
 </div>
@@ -948,8 +926,8 @@ function toast(msg){
 
 function updateUI(){
   const r = SAVE.resources;
-  const ids = ['hdr-gold','hdr-ruby','dash-gold','dash-ruby','dash-sapphire','shop-gold'];
-  const vals = [r.gold, r.ruby, r.gold, r.ruby, r.sapphire, r.gold];
+  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','dash-gold','dash-ruby','dash-sapphire','shop-gold'];
+  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold];
   for(let i=0;i<ids.length;i++){
     const el = document.getElementById(ids[i]);
     if(el) el.textContent = vals[i];
@@ -987,6 +965,28 @@ function updateUI(){
   }
 }
 
+// ===== LAUNCHERS =====
+function startRandomGame(){
+  // For now, only Match-3 is available
+  showScreen('match3');
+  startMatch3();
+}
+
+let selectedMiner = 'match3';
+function selectMiner(id){
+  selectedMiner = id;
+  // Highlight active
+  document.querySelectorAll('[id^="miner-btn-"]').forEach(b=>b.className='btn btn-small btn-secondary');
+  const btn = document.getElementById('miner-btn-'+id);
+  if(btn) btn.className = 'btn btn-small btn-primary';
+  // Render content for selected miner
+  updateAchieveList();
+  updateAchieveCanvasList();
+  updateSkinList();
+  updatePacksList();
+  updateEffectsUI();
+}
+
 // ===== SCREEN NAV =====
 async function showScreen(id){
   // Chat polling lifecycle
@@ -1010,10 +1010,7 @@ async function showScreen(id){
   if(id==='shop') { renderShopPacks(); renderMarketListings(); }
   if(id==='profile') updateProfile();
   if(id==='achieve') {
-    // Make sure all sections are rendered when switching to achievements
-    updateAchieveList();
-    updateAchieveCanvasList();
-    updatePacksList();
+    selectMiner(selectedMiner);
   }
   updateUI();
 }
