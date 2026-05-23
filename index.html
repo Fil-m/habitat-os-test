@@ -1380,6 +1380,7 @@ function applyPack(packId){
   saveToDisk();
   updateUI();
   toast('✅ Пак "'+pack.name+'" застосовано!');
+  refreshGameSkins();
 }
 
 function renderShopPacks(){
@@ -1555,6 +1556,14 @@ function updateEffectsUI(){
   }
 }
 
+
+// Refresh game board when skins change
+function refreshGameSkins(){
+  const gameScreen = document.getElementById('screen-game');
+  if(gameScreen && gameScreen.classList.contains('active')){
+    renderBoard();
+  }
+}
 
 // ===== SKIN EDITOR =====
 const PALETTE_COLORS = [
@@ -1898,6 +1907,7 @@ function equipSkinById(skinId, gemType){
   saveToDisk();
   updateUI();
   toast('⭐ "'+skin.name+'" екіпіровано для '+gemType+'!');
+  refreshGameSkins();
 }
 
 function unequipSkinByType(gemType){
@@ -1906,6 +1916,7 @@ function unequipSkinByType(gemType){
   saveToDisk();
   updateUI();
   toast('⬇ Скін знято з '+gemType+'. Повернуто до ЧБ.');
+  refreshGameSkins();
 }
 
 function sellSkinById(skinId){
