@@ -97,63 +97,58 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 }
 /* Ruby — 🔴 RED CIRCLE */
 .m3-cell .gem.g0{
-  background:radial-gradient(circle at 35% 35%,#ff2222,#cc0000);
+  background:radial-gradient(circle at 35% 35%,#ff4444,#cc0000);
   border-radius:50%;
-  border:2px solid #ff4444;
+  border:2px solid #ff6666;
 }
-/* Sapphire — 🔵 BLUE DIAMOND */
+/* Sapphire — 🔵 BLUE SQUARE WITH CROSS */
 .m3-cell .gem.g1{
-  background:radial-gradient(circle at 35% 35%,#2266ff,#0033cc);
+  background:
+    linear-gradient(to right,transparent calc(50% - 2px),#88bbff calc(50% - 2px),#88bbff calc(50% + 2px),transparent calc(50% + 2px)),
+    linear-gradient(to bottom,transparent calc(50% - 2px),#88bbff calc(50% - 2px),#88bbff calc(50% + 2px),transparent calc(50% + 2px)),
+    radial-gradient(circle at 35% 35%,#2266ff,#0033cc);
   border-radius:2px;
-  transform:translate(-50%,-50%) rotate(45deg);
   border:2px solid #4488ff;
 }
-/* Gold — 🟡 YELLOW SQUARE */
+/* Gold — 🟡 YELLOW TRIANGLE */
 .m3-cell .gem.g2{
-  background:radial-gradient(circle at 35% 35%,#ffdd00,#cc9900);
-  border-radius:2px;
-  border:2px solid #ffee44;
+  background:radial-gradient(circle at 50% 20%,#ffdd00,#cc9900);
+  clip-path:polygon(50% 5%,95% 95%,5% 95%);
+  border:none;
 }
-/* Emerald — 🟩 GREEN TRIANGLE */
+/* Emerald — 🟩 GREEN DIAMOND */
 .m3-cell .gem.g3{
-  background:radial-gradient(circle at 35% 35%,#00cc44,#008822);
-  border-radius:2px;
-  clip-path:polygon(50% 5%,95% 90%,5% 90%);
+  background:radial-gradient(circle at 35% 35%,#00dd55,#008833);
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
   border:none;
 }
 
 /* B&W MODE — distinct patterns by shape only */
 .m3-cell.bw .gem.g0{
-  background:#555!important;border-radius:50%!important;border:2px solid #777;
-  transform:translate(-50%,-50%)!important;
+  background:#666!important;border-radius:50%!important;border:2px solid #888!important;
   clip-path:none!important;
 }
 .m3-cell.bw .gem.g1{
-  background:#555!important;border-radius:2px!important;
-  transform:translate(-50%,-50%) rotate(45deg)!important;
-  border:2px solid #888;
+  background:
+    linear-gradient(to right,transparent calc(50% - 2px),#666 calc(50% - 2px),#666 calc(50% + 2px),transparent calc(50% + 2px)),
+    linear-gradient(to bottom,transparent calc(50% - 2px),#666 calc(50% - 2px),#666 calc(50% + 2px),transparent calc(50% + 2px))!important;
+  background-color:transparent!important;
+  border:3px solid #666!important;border-radius:2px!important;
   clip-path:none!important;
-  width:60%;height:60%;
 }
 .m3-cell.bw .gem.g2{
-  background:#555!important;border-radius:2px!important;
-  transform:translate(-50%,-50%)!important;
-  border:2px solid #999;
-  clip-path:none!important;
-}
-.m3-cell.bw .gem.g3{
-  background:#555!important;border-radius:2px!important;
-  clip-path:polygon(50% 5%,95% 90%,5% 90%)!important;
-  transform:translate(-50%,-50%)!important;
+  background:repeating-linear-gradient(0deg,#666,#666 2px,transparent 2px,transparent 8px)!important;
+  clip-path:polygon(50% 5%,95% 95%,5% 95%)!important;
   border:none!important;
 }
-/* Add subtle cross pattern to B&W gems for texture */
-.m3-cell.bw .gem::after{
-  content:'';position:absolute;top:2px;left:2px;right:2px;bottom:2px;
-  background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,0.05) 2px,rgba(255,255,255,0.05) 4px);
-  border-radius:inherit;
-  clip-path:inherit;
+.m3-cell.bw .gem.g3{
+  background:
+    repeating-linear-gradient(45deg,#666,#666 1px,transparent 1px,transparent 6px),
+    repeating-linear-gradient(-45deg,#666,#666 1px,transparent 1px,transparent 6px)!important;
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)!important;
+  border:none!important;
 }
+/* No shared ::after — patterns handled per-gem */
 
 /* Match-3 results */
 .m3-result{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,13,25,0.92);z-index:50;padding:24px;text-align:center}
