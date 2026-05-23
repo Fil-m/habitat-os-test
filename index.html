@@ -704,18 +704,37 @@ function renderBoard(){
       cell.dataset.r=r;
       cell.dataset.c=c;
       const gem = document.createElement('div');
-      gem.className='gem g'+gt;
-      // Apply color override from equipped skin
       const gemNames = ['ruby','sapphire','gold','emerald'];
       const eq = SAVE.equipped_skins || {};
       const eqSkinId = eq[gemNames[gt]];
+      let skinApplied = false;
       if(eqSkinId){
         const eqSkin = SAVE.inventory.skins.find(s=>s.id===eqSkinId);
-        if(eqSkin && eqSkin.color_override){
+        if(eqSkin && eqSkin.pixels && eqSkin.pixels.some(p=>p!==null)){
+          // Render pixel art from skin
+          const dataUrl = renderPixelsToDataUrl(eqSkin.pixels, eqSkin.size || 16);
+          gem.className = 'gem';
+          gem.style.backgroundImage = 'url('+dataUrl+')';
+          gem.style.backgroundSize = '100% 100%';
+          gem.style.backgroundPosition = 'center';
+          gem.style.backgroundRepeat = 'no-repeat';
+          gem.style.borderRadius = '0';
+          gem.style.clipPath = 'none';
+          gem.style.border = 'none';
+          gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
+          skinApplied = true;
+        }else if(eqSkin && eqSkin.color_override){
+          gem.className = 'gem';
           gem.style.background = eqSkin.color_override;
+          gem.style.borderRadius = '0';
+          gem.style.clipPath = 'none';
           gem.style.border = 'none';
           gem.style.boxShadow = '0 0 10px '+eqSkin.color_override;
+          skinApplied = true;
         }
+      }
+      if(!skinApplied){
+        gem.className = 'gem g'+gt;
       }
       cell.appendChild(gem);
       cell.addEventListener('click',()=>onCellClick(r,c));
@@ -1573,6 +1592,27 @@ function hexToRgb(hex){
   const g = parseInt(hex.slice(3,5),16);
   const b = parseInt(hex.slice(5,7),16);
   return [r,g,b];
+}
+
+function renderPixelsToDataUrl(pixels, size){
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const total = size * size;
+  const imageData = ctx.createImageData(size, size);
+  for(let i=0;i<total;i++){
+    const color = pixels[i];
+    let r,g,b;
+    if(color){
+      [r,g,b] = hexToRgb(color);
+    }else{
+      r=26;g=29;b=51;
+    }
+    imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
+  }
+  ctx.putImageData(imageData,0,0);
+  return canvas.toDataURL();
 }
 
 // ===== CHAT =====
