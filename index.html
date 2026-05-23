@@ -224,7 +224,46 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   .resource-grid{grid-template-columns:1fr}
 }
 
-/* Toast */
+/* Match-3 effects */
+.m3-cell .gem.glow{
+  animation:gemGlow 0.6s ease-in-out infinite alternate;
+}
+@keyframes gemGlow{
+  from{filter:brightness(1) drop-shadow(0 0 2px rgba(255,255,255,0.3))}
+  to{filter:brightness(1.4) drop-shadow(0 0 10px rgba(255,255,255,0.8))}
+}
+.m3-cell .gem.particle-burst{
+  animation:particleBurst 0.4s ease-out;
+}
+@keyframes particleBurst{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(2);opacity:0}
+}
+.m3-board.gravity-flip .m3-cell .gem{
+  animation:floatUp 0.3s ease-out;
+}
+@keyframes floatUp{
+  from{transform:translate(-50%,10px);opacity:0.5}
+  to{transform:translate(-50%,-50%);opacity:1}
+}
+.screen-pulse{
+  animation:screenPulse 0.3s ease-out;
+}
+@keyframes screenPulse{
+  0%{box-shadow:inset 0 0 0 rgba(255,255,255,0)}
+  50%{box-shadow:inset 0 0 60px rgba(0,240,255,0.15)}
+  100%{box-shadow:inset 0 0 0 rgba(255,255,255,0)}
+}
+
+/* Effects Shop */
+.effect-timer{
+  font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:2px;
+}
+.effect-timer.active{color:var(--green)}
+.effect-buy-input{
+  width:60px;padding:4px 6px;border-radius:4px;border:1px solid var(--surface2);
+  background:var(--bg3);color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;
+}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);max-width:360px;width:90%;background:var(--surface);border:1px solid var(--neon);border-radius:var(--radius);padding:12px 16px;font-size:13px;text-align:center;z-index:999;box-shadow:var(--shadow);animation:toastIn 0.3s ease;pointer-events:none}
 .toast.hidden{display:none}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
@@ -403,6 +442,85 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div style="margin:0 16px" id="shop-pack-list">
       <div class="empty-state"><span class="icon">📦</span>Завантаження...</div>
     </div>
+    <div class="shop-category">⚡ Ефекти та Правила</div>
+    <div style="margin:0 16px">
+      <!-- Visual Effects -->
+      <div style="font-size:12px;font-weight:600;color:var(--neon2);margin:8px 0 4px">✨ Візуальні ефекти</div>
+      <div class="shop-item" id="eff-gem_glow">
+        <div class="shop-icon">✨</div>
+        <div class="shop-info">
+          <div class="shop-name">Gem Glow</div>
+          <div class="shop-desc">Камінці світяться при збігу</div>
+          <div class="effect-timer" id="eff-timer-gem_glow">5 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-gem_glow" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('gem_glow',5)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">💫</div>
+        <div class="shop-info">
+          <div class="shop-name">Particle Trail</div>
+          <div class="shop-desc">Частинки після збігу · 3 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">🌊</div>
+        <div class="shop-info">
+          <div class="shop-name">Screen Pulse</div>
+          <div class="shop-desc">Екран пульсує на комбо · 2 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <!-- Rules -->
+      <div style="font-size:12px;font-weight:600;color:var(--neon);margin:12px 0 4px">🎮 Правила гри</div>
+      <div class="shop-item" id="eff-gravity_flip">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">Gravity Flip</div>
+          <div class="shop-desc">Камінці падають ВГОРУ</div>
+          <div class="effect-timer" id="eff-timer-gravity_flip">10 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-gravity_flip" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('gravity_flip',10)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">⚡</div>
+        <div class="shop-info">
+          <div class="shop-name">Speed Mode</div>
+          <div class="shop-desc">Зворотній таймер · 8 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">👻</div>
+        <div class="shop-info">
+          <div class="shop-name">Invisible Gems</div>
+          <div class="shop-desc">Камінці невидимі до наведення · 12 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">💥</div>
+        <div class="shop-info">
+          <div class="shop-name">Bomb Mode</div>
+          <div class="shop-desc">Збіг створює вибух навколо · 15 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">🎯</div>
+        <div class="shop-info">
+          <div class="shop-name">Target Mode</div>
+          <div class="shop-desc">Треба зібрати конкретні камінці · 10 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+    </div>
     <div style="flex:1;min-height:20px"></div>
   </div>
 
@@ -411,9 +529,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="header">
       <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
       <h1 style="font-size:15px">🏆 АЧІВКИ</h1>
+      <button class="btn btn-small btn-gold" onclick="showScreen('shop')">🛒</button>
     </div>
+    <!-- Statistics -->
     <div class="card">
-      <div class="card-title">Мої покращення</div>
+      <div class="card-title">📊 Статистика</div>
+      <div style="font-family:var(--mono);font-size:14px;display:grid;gap:8px">
+        <div>🎮 Зіграно матчів: <strong id="stat-matches">0</strong></div>
+        <div>🪙 Всього зароблено: <strong id="stat-earned">0</strong></div>
+        <div>🏆 Рекорд: <strong id="stat-record">0</strong></div>
+      </div>
+    </div>
+    <!-- Purchased Achievements -->
+    <div class="card">
+      <div class="card-title">🏅 Придбані ачівки</div>
       <div class="ach-list" id="ach-list">
         <div class="empty-state">
           <span class="icon">🏆</span>
@@ -421,23 +550,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">Статистика</div>
-      <div style="font-family:var(--mono);font-size:14px;display:grid;gap:8px">
-        <div>🎮 Зіграно матчів: <strong id="stat-matches">0</strong></div>
-        <div>🪙 Всього зароблено: <strong id="stat-earned">0</strong></div>
-        <div>🏆 Рекорд: <strong id="stat-record">0</strong></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">🖼 Інвентар скінів</div>
-      <div id="skin-list">
-        <div class="empty-state">
-          <span class="icon">🎨</span>
-          Створіть скін у редакторі
-        </div>
-      </div>
-    </div>
+    <!-- Purchased Packs -->
     <div class="card">
       <div class="card-title">📦 Мої паки</div>
       <div id="packs-list">
@@ -447,6 +560,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
       </div>
     </div>
+    <!-- Buttons -->
+    <div style="margin:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-primary btn-block" onclick="showScreen('shop')">
+        🛒 В магазин
+      </button>
+      <button class="btn btn-gold btn-block" onclick="createPack()">
+        📦 Створити пак
+      </button>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
   </div>
 
   <!-- Skin Editor Screen -->
@@ -514,8 +637,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <button class="nav-btn" data-screen="shop" onclick="showScreen('shop')">
       <span class="icon">🏪</span> Магазин
     </button>
-    <button class="nav-btn" data-screen="skineditor" onclick="showScreen('skineditor')">
-      <span class="icon">🎨</span> Скіни
+    <button class="nav-btn" data-screen="achieve" onclick="showScreen('achieve')">
+      <span class="icon">🏆</span> Ачівки
     </button>
     <button class="nav-btn" data-screen="chat" onclick="showScreen('chat')">
       <span class="icon">💬</span> Чат
@@ -533,7 +656,8 @@ const DEFAULT_SAVE = {
   stats: {matches:0, earned:0, record:0},
   chat: [],
   match3_state: {daily_matches:0},
-  packs: []
+  packs: [],
+  active_effects: {}
 };
 
 function loadSave(){
@@ -617,6 +741,7 @@ function updateUI(){
   updateAchList();
   updateSkinList();
   updatePacksList();
+  updateEffectsUI();
 }
 
 // ===== SCREEN NAV =====
@@ -695,6 +820,7 @@ function renderBoard(){
   container.innerHTML='';
   const style = calcGridSize();
   container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
+  const gemGlowActive = isEffectActive('gem_glow');
   for(let r=0;r<BOARD_SIZE;r++){
     for(let c=0;c<BOARD_SIZE;c++){
       const cell = document.createElement('div');
@@ -735,6 +861,9 @@ function renderBoard(){
       }
       if(!skinApplied){
         gem.className = 'gem g'+gt;
+        if(gemGlowActive) gem.classList.add('glow');
+      }else{
+        if(gemGlowActive) gem.classList.add('glow');
       }
       cell.appendChild(gem);
       cell.addEventListener('click',()=>onCellClick(r,c));
@@ -869,20 +998,32 @@ function processMatches(matches, comboLevel){
     },150);
   },150);
 }
+// ===== EFFECT INTEGRATION INTO MATCH-3 =====
 
 function applyGravity(){
+  const gravityFlip = isEffectActive('gravity_flip');
   for(let c=0;c<BOARD_SIZE;c++){
     const col = [];
     for(let r=0;r<BOARD_SIZE;r++){
       if(board[r][c]!==-1) col.push(board[r][c]);
     }
-    // Fill from top with random
     while(col.length<BOARD_SIZE){
-      col.unshift(Math.floor(Math.random()*GEM_TYPES));
+      if(gravityFlip){
+        // Gravity Flip: fill from bottom, gems "float" up
+        col.push(Math.floor(Math.random()*GEM_TYPES));
+      } else {
+        col.unshift(Math.floor(Math.random()*GEM_TYPES));
+      }
     }
     for(let r=0;r<BOARD_SIZE;r++){
       board[r][c] = col[r];
     }
+  }
+  // Apply gravity-flip CSS class
+  const boardEl = document.getElementById('m3-board');
+  if(boardEl){
+    if(gravityFlip) boardEl.classList.add('gravity-flip');
+    else boardEl.classList.remove('gravity-flip');
   }
 }
 
@@ -1165,6 +1306,131 @@ function buyAchievement(id){
   saveToDisk();
   updateUI();
   toast('✅ '+names[id]+' придбано!');
+}
+
+// ===== EFFECTS & RULES SYSTEM =====
+const EFFECTS_DEF = {
+  gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
+  particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
+  screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
+  gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
+  speed_mode: {name:'Speed Mode', icon:'⚡', type:'rule', price_per_min:8, desc:'Зворотній таймер'},
+  invisible_gems: {name:'Invisible Gems', icon:'👻', type:'rule', price_per_min:12, desc:'Камінці невидимі до наведення'},
+  bomb_mode: {name:'Bomb Mode', icon:'💥', type:'rule', price_per_min:15, desc:'Збіг створює вибух навколо'},
+  target_mode: {name:'Target Mode', icon:'🎯', type:'rule', price_per_min:10, desc:'Треба зібрати конкретні камінці'}
+};
+
+function isEffectActive(effectId){
+  const eff = SAVE.active_effects[effectId];
+  if(!eff || !eff.active) return false;
+  if(Date.now() >= eff.expires_at){
+    eff.active = false;
+    delete SAVE.active_effects[effectId];
+    saveToDisk();
+    return false;
+  }
+  return true;
+}
+
+function buyEffect(effectId, pricePerMin){
+  const input = document.getElementById('eff-minutes-'+effectId);
+  const minutes = parseInt(input ? input.value : 5);
+  if(!minutes || minutes < 1){ toast('❌ Введіть кількість хвилин'); return; }
+  const totalPrice = pricePerMin * minutes;
+  if(SAVE.resources.gold < totalPrice){
+    toast('❌ Недостатньо Gold! Потрібно '+totalPrice+' 🪙');
+    return;
+  }
+  SAVE.resources.gold -= totalPrice;
+  const expiresAt = Date.now() + minutes * 60 * 1000;
+  if(SAVE.active_effects[effectId] && SAVE.active_effects[effectId].active){
+    // Extend existing effect
+    const existing = SAVE.active_effects[effectId];
+    if(Date.now() < existing.expires_at){
+      existing.expires_at += minutes * 60 * 1000;
+    } else {
+      existing.expires_at = expiresAt;
+    }
+    existing.active = true;
+  } else {
+    SAVE.active_effects[effectId] = {active: true, expires_at: expiresAt};
+  }
+  saveToDisk();
+  updateUI();
+  const def = EFFECTS_DEF[effectId];
+  toast('✅ '+(def?def.name:effectId)+' активовано на '+minutes+' хв!');
+}
+
+function updateEffectsUI(){
+  for(const id in EFFECTS_DEF){
+    const timerEl = document.getElementById('eff-timer-'+id);
+    if(!timerEl) continue;
+    const def = EFFECTS_DEF[id];
+    const active = isEffectActive(id);
+    if(active){
+      const remaining = Math.max(0, Math.floor((SAVE.active_effects[id].expires_at - Date.now()) / 1000));
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      timerEl.innerHTML = def.price_per_min+' 🪙/хв · <span style="color:var(--green)">✅ Активно: '+mins+':'+(secs<10?'0':'')+secs+'</span>';
+      timerEl.className = 'effect-timer active';
+    } else {
+      timerEl.innerHTML = def.price_per_min+' 🪙/хв · Неактивно';
+      timerEl.className = 'effect-timer';
+    }
+  }
+}
+
+// ===== CREATE PACK =====
+function createPack(){
+  const skins = SAVE.inventory.skins || [];
+  const customSkins = skins.filter(s => !s.from_pack);
+  if(customSkins.length < 2){
+    toast('❌ Потрібно мінімум 2 власних скіни для створення пака!');
+    return;
+  }
+  // Let user select skins
+  let msg = 'Оберіть скіни для пака (введіть номери через кому):\n';
+  const selectable = [];
+  for(let i=0;i<customSkins.length;i++){
+    const s = customSkins[i];
+    const gemLabels = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
+    const icon = gemLabels[s.gem_type] || '🎨';
+    msg += (i+1)+'. '+icon+' '+s.name+'\n';
+    selectable.push(s);
+  }
+  const input = prompt(msg);
+  if(!input) return;
+  const indices = input.split(',').map(s=>parseInt(s.trim())-1).filter(i=>i>=0 && i<selectable.length);
+  if(indices.length < 2){
+    toast('❌ Виберіть хоча б 2 скіни');
+    return;
+  }
+  const selectedSkins = indices.map(i=>selectable[i]);
+  const packName = prompt('Назва пака:', 'Мій пак #'+(SAVE.packs.length+1));
+  if(!packName) return;
+  const packPrice = parseInt(prompt('Ціна пака (Gold):', '20'));
+  if(!packPrice || packPrice < 1) return;
+
+  // Create the pack
+  const packId = 'user_pack_'+Date.now();
+  const packSkins = {};
+  for(const s of selectedSkins){
+    const color = s.color_override || null;
+    packSkins[s.gem_type] = {color: color};
+  }
+  SAVE.packs.push({
+    id: packId,
+    name: packName.trim(),
+    author: '👤 Гравець',
+    price: packPrice,
+    desc: 'Власний пак з '+selectedSkins.length+' скінів',
+    skins: packSkins,
+    applied: false,
+    user_created: true
+  });
+  saveToDisk();
+  updateUI();
+  toast('📦 Пак "'+packName.trim()+'" створено! Знайдіть його в списку паків.');
 }
 
 function updateAchList(){
