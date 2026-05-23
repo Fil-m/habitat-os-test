@@ -2399,6 +2399,32 @@ function sendChat(){
 }
 
 // ===== P2P MARKETPLACE =====
+// ===== SHARED SERVER API =====
+const API_BASE = window.location.origin;
+let sharedServerAvailable = false;
+
+// Check if shared server is running
+async function checkSharedServer(){
+  try {
+    const r = await fetch(API_BASE+'/api/market/listings', {signal: AbortSignal.timeout(2000)});
+    if(r.ok) sharedServerAvailable = true;
+  } catch(e){ sharedServerAvailable = false; }
+}
+checkSharedServer();
+
+async function syncMarketFromServer(){
+  if(!sharedServerAvailable) return;
+  try {
+    const r = await fetch(API_BASE+'/api/market/listings');
+    const serverListings = await r.json();
+    // Merge: local listings + server listings
+    const localIds = new Set(SAVE.market_listings.map(l=>l.id));
+    for(const sl of serverListings){
+      if(!localIds.has(sl.id)) SAVE.market_listings.push(sl);
+    }
+  } catch(e){}
+}
+
 function listSkinOnMarket(skinId){
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
@@ -2436,6 +2462,13 @@ function listSkinOnMarket(skinId){
   saveToDisk();
   updateUI();
   toast('📤 "'+skin.name+'" виставлено на ринок за '+price+' 🪙!');
+  // Sync to server
+  if(sharedServerAvailable){
+    fetch(API_BASE+'/api/market/list', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(listing)
+    }).catch(()=>{});
+  }
   // Chat notification
   const hash = Math.random().toString(16).slice(2,10);
   SAVE.chat.push({
@@ -2468,11 +2501,23 @@ function buyFromMarket(listingId){
   updateUI();
   renderMarketListings();
   toast('✅ "'+listing.skin_name+'" придбано за '+listing.price+' 🪙!');
+  // Sync to server
+  if(sharedServerAvailable){
+    fetch(API_BASE+'/api/market/buy', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:listingId, buyer: SAVE.player?.name || 'unknown'})
+    }).catch(()=>{});
+  }
 }
 
 function renderMarketListings(){
   const container = document.getElementById('market-listings');
   if(!container) return;
+  // Load shared listings from server
+  if(sharedServerAvailable) syncMarketFromServer().then(()=>{ renderMarketListingsNow(container); });
+  else renderMarketListingsNow(container);
+}
+function renderMarketListingsNow(container){
   const listings = SAVE.market_listings || [];
   if(!listings.length){
     container.innerHTML = '<div class="empty-state"><span class="icon">🏪</span>Немає активних пропозицій від гравців</div>';
