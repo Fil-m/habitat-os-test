@@ -310,7 +310,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="resources" id="header-resources">
         <span class="resource">🪙<span class="val" id="hdr-gold">0</span></span>
         <span class="resource">💎<span class="val" id="hdr-ruby">0</span></span>
-        <span class="resource" style="font-size:10px">🎨<span class="val" id="hdr-pixels">0</span></span>
       </div>
     </div>
     <div class="hero-section">
@@ -333,11 +332,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="icon">🌀</div>
         <div class="label">Sapphire</div>
         <div class="value" id="dash-sapphire">0</div>
-      </div>
-      <div class="resource-card">
-        <div class="icon">🎨</div>
-        <div class="label">Pixel hours</div>
-        <div class="value" id="dash-pixels">0</div>
       </div>
     </div>
     <div class="dash-buttons">
@@ -403,22 +397,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </select>
     </div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyItem('pixels_100')" data-game="match3">
-        <div class="shop-icon">🎨</div>
-        <div class="shop-info">
-          <div class="shop-name">100 піксель-годин</div>
-          <div class="shop-desc">+100 до ліміту для редактора</div>
-        </div>
-        <div class="shop-price" id="shop-price-pixels_100">8 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyItem('pixels_500')" data-game="match3">
-        <div class="shop-icon">🎨🎨</div>
-        <div class="shop-info">
-          <div class="shop-name">500 піксель-годин</div>
-          <div class="shop-desc">+500 до ліміту (вигідно!)</div>
-        </div>
-        <div class="shop-price" id="shop-price-pixels_500">35 🪙</div>
-      </div>
     </div>
     <div class="shop-category" data-game="match3">🎨 Холсти для скінів</div>
     <div style="margin:0 16px">
@@ -970,8 +948,8 @@ function toast(msg){
 
 function updateUI(){
   const r = SAVE.resources;
-  const ids = ['hdr-gold','hdr-ruby','hdr-pixels','dash-gold','dash-ruby','dash-sapphire','dash-pixels','shop-gold'];
-  const vals = [r.gold, r.ruby, r.pixel_hours, r.gold, r.ruby, r.sapphire, r.pixel_hours, r.gold];
+  const ids = ['hdr-gold','hdr-ruby','dash-gold','dash-ruby','dash-sapphire','shop-gold'];
+  const vals = [r.gold, r.ruby, r.gold, r.ruby, r.sapphire, r.gold];
   for(let i=0;i<ids.length;i++){
     const el = document.getElementById(ids[i]);
     if(el) el.textContent = vals[i];
@@ -1533,24 +1511,6 @@ const CANVAS_TYPES = {
 };
 
 // ===== SHOP FUNCTIONS =====
-function buyItem(itemId){
-  const r = SAVE.resources;
-  if(itemId==='pixels_100'){
-    if(r.gold < 8){ toast('❌ Недостатньо Gold!'); return; }
-    r.gold -= 8;
-    r.pixel_hours += 100;
-    saveToDisk();
-    updateUI();
-    toast('✅ +100 піксель-годин! 🎨 В редакторі обирайте вік пікселя і малюйте');
-  }else if(itemId==='pixels_500'){
-    if(r.gold < 35){ toast('❌ Недостатньо Gold!'); return; }
-    r.gold -= 35;
-    r.pixel_hours += 500;
-    saveToDisk();
-    updateUI();
-    toast('✅ +500 піксель-годин! 🎨 Тепер вистачить надовго');
-  }
-}
 
 function buyAchievement(id){
   const prices = {extra_moves:15, combo:30, extra_swap:20, lucky_start:15, shield:25, time_bonus:20, target_lock:30};
