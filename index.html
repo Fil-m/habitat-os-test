@@ -2746,23 +2746,15 @@ async function renderChat(){
 function startChatPolling(){
   if(chatPollInterval) clearInterval(chatPollInterval);
   chatPollInterval = setInterval(()=>{
+    // Only poll if chat screen is still active
+    const chatScreen = document.getElementById('screen-chat');
+    if(!chatScreen || !chatScreen.classList.contains('active')){
+      stopChatPolling();
+      return;
+    }
     loadChatFromGitHub().then(()=>{
-      const container = document.getElementById('chat-messages');
-      if(!container) return;
-      const msgs = SAVE.chat.slice(-30);
-      let html='';
-      for(const m of msgs){
-        const timeStr = m.time ? new Date(m.time).toLocaleString('uk-UA', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) : '';
-        html+=`<div class="chat-msg"><div><span class="chat-hash">[${m.hash}]</span> <span class="chat-author">${escapeHtml(m.author)}</span> <span style="font-size:10px;color:var(--text3)">${timeStr}</span></div><div class="chat-text">${escapeHtml(m.text)}</div>`;
-        if(m.trade){
-          if(m.trade.type === 'skin_trade') html+=`<div class="chat-trade">🤝 Продає скін: <strong>${escapeHtml(m.trade.skin_name)}</strong> за ${m.trade.price} 🪙 <span class="trade-action" onclick="acceptTrade('${m.hash}')">[Прийняти]</span></div>`;
-          else { const a=m.trade.type==='sell'?'💰 Продає':'🛒 Купує'; html+=`<div class="chat-trade">${a} <strong>${escapeHtml(m.trade.item)}</strong> за ${m.trade.price} 🪙 <span class="trade-action" onclick="acceptTrade('${m.hash}')">[Прийняти]</span></div>`; }
-        }
-        html+=`</div>`;
-      }
-      container.innerHTML=html;
-      container.scrollTop = container.scrollHeight;
-    });
+      renderChat();
+    }).catch(()=>{});
   }, 5000);
 }
 
