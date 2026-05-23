@@ -838,6 +838,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="profile-actions">
       <button class="btn btn-success btn-block btn-small" onclick="exportSave()">💾 Експорт прогресу</button>
       <button class="btn btn-secondary btn-block btn-small" onclick="importSave()">📂 Імпорт прогресу</button>
+      <button class="btn btn-danger btn-block btn-small" onclick="if(confirm('Видалити ВЕСЬ прогрес безповоротно?')){localStorage.removeItem('habitat_os_save');location.reload();}" style="margin-top:8px">🗑 Скинути прогрес</button>
     </div>
     <div class="github-section">
       <div class="github-title">🐙 GitHub Sync <span id="github-status" style="font-size:11px;text-transform:none;color:var(--text3)">· Не налаштовано</span></div>
