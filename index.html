@@ -407,6 +407,41 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="shop-price" id="shop-price-pixels_500">35 🪙</div>
       </div>
     </div>
+    <div class="shop-category">🎨 Холсти для скінів</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" onclick="buyCanvas('ruby')">
+        <div class="shop-icon">🟣</div>
+        <div class="shop-info">
+          <div class="shop-name">Ruby Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Ruby</div>
+        </div>
+        <div class="shop-price" id="canvas-price-ruby">20 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('sapphire')">
+        <div class="shop-icon">🔵</div>
+        <div class="shop-info">
+          <div class="shop-name">Sapphire Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Sapphire</div>
+        </div>
+        <div class="shop-price" id="canvas-price-sapphire">20 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('gold')">
+        <div class="shop-icon">🟡</div>
+        <div class="shop-info">
+          <div class="shop-name">Gold Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Gold</div>
+        </div>
+        <div class="shop-price" id="canvas-price-gold">20 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyCanvas('emerald')">
+        <div class="shop-icon">🟢</div>
+        <div class="shop-info">
+          <div class="shop-name">Emerald Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Emerald</div>
+        </div>
+        <div class="shop-price" id="canvas-price-emerald">20 🪙</div>
+      </div>
+    </div>
     <div class="shop-category">⚡ Покращення Match-3</div>
     <div style="margin:0 16px">
       <div class="shop-item" onclick="buyAchievement('extra_moves')">
@@ -653,6 +688,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
 
+    <!-- Section 3b: Purchased Canvases -->
+    <div class="card">
+      <div class="card-title">🖼 Мої холсти</div>
+      <div id="canvas-list">
+        <div class="empty-state"><span class="icon">🎨</span>Купіть холст у магазині</div>
+      </div>
+    </div>
+
     <!-- Section 4: My Packs -->
     <div class="card">
       <div class="card-title">📦 Мої паки</div>
@@ -701,10 +744,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
       </div>
     </div>
+    <div style="margin:8px 16px">
+      <button class="btn btn-primary btn-block" onclick="saveSkinFromEditor()">💾 Зберегти скін</button>
+    </div>
     <div style="flex:1;min-height:20px"></div>
   </div>
-
-  <!-- Chat Screen -->
   <div id="screen-chat" class="screen">
     <div class="header">
       <h1 style="font-size:15px">💬 ЧАТ</h1>
@@ -823,7 +867,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 // ===== SAVE SYSTEM =====
 const DEFAULT_SAVE = {
   resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
-  inventory: {skins:[], owned_achievements:[]},
+  inventory: {skins:[], canvases:[], owned_achievements:[]},
   equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
   achievements: {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false},
   market_listings: [],
@@ -850,8 +894,6 @@ function loadSave(){
         if(!(k in data.resources)) data.resources[k] = DEFAULT_SAVE.resources[k];
       }
       if(typeof data.inventory !== 'object') data.inventory = {...DEFAULT_SAVE.inventory};
-      // Clean up old canvases — больше не используются
-      delete data.inventory.canvases;
       // Clean up old pack skins (from_pack) — паки теперь активируют эффекты
       if(Array.isArray(data.inventory.skins)){
         data.inventory.skins = data.inventory.skins.filter(s=>!s.from_pack);
@@ -1444,6 +1486,15 @@ function updatePacksList(){
   container.innerHTML = html;
 }
 
+// ===== CANVAS TYPES FOR SKIN EDITOR =====
+const CANVAS_TYPES = {
+  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby'},
+  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire'},
+  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold'},
+  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
+};
+
+// ===== SHOP FUNCTIONS =====
 function buyItem(itemId){
   const r = SAVE.resources;
   if(itemId==='pixels_100'){
@@ -1483,6 +1534,34 @@ function buyAchievement(id){
   saveToDisk();
   updateUI();
   toast('✅ '+names[id]+' придбано!');
+}
+
+// ===== CANVAS SHOP =====
+function buyCanvas(type){
+  const ct = CANVAS_TYPES[type];
+  if(!ct){ toast('❌ Невідомий тип холста'); return; }
+  if(SAVE.resources.gold < ct.price){
+    toast('❌ Недостатньо Gold! Потрібно '+ct.price+' 🪙');
+    return;
+  }
+  if(!Array.isArray(SAVE.inventory.canvases)) SAVE.inventory.canvases = [];
+  // Check if already have an unused canvas of this type
+  const existing = SAVE.inventory.canvases.find(c=>c.type===type);
+  if(existing){
+    toast('ℹ️ У вас вже є невикористаний '+ct.name);
+    return;
+  }
+  SAVE.resources.gold -= ct.price;
+  SAVE.inventory.canvases.push({
+    id: 'cv_'+Date.now(),
+    type: type,
+    purchased: Date.now()
+  });
+  saveToDisk();
+  updateUI();
+  if(confirm('✅ '+ct.name+' придбано! Відкрити редактор?')){
+    openSkinEditor(type);
+  }
 }
 
 // ===== EFFECTS & RULES SYSTEM =====
@@ -1587,8 +1666,9 @@ let editorGemType = null;
 let editorDirty = false;
 let editorInitialized = false;
 let editorActiveLayer = 'gem';
+let editorEditingSkinId = null; // null = new skin, string = editing existing skin
+let editorPixelTimestamps = []; // timestamps for each pixel in editorPixels
 
-// ===== OPEN SKIN EDITOR =====
 function openSkinEditor(gemType){
   const validTypes = ['ruby','sapphire','gold','emerald'];
   if(!gemType || !validTypes.includes(gemType)){
@@ -1597,15 +1677,45 @@ function openSkinEditor(gemType){
     const idx = parseInt(choice) - 1;
     gemType = validTypes[idx] || 'ruby';
   }
+  editorEditingSkinId = null;
   editorGemType = gemType;
   editorSize = 16;
   editorPixels = new Array(256).fill(null);
   editorBgPixels = new Array(256).fill(null);
   editorFramePixels = new Array(256).fill(null);
+  editorPixelTimestamps = new Array(256).fill(null);
   editorActiveLayer = 'gem';
   editorDirty = false;
   editorInitialized = false;
   showScreen('skineditor');
+}
+
+// ===== OPEN EXISTING SKIN FOR EDITING =====
+function openExistingSkin(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  editorEditingSkinId = skinId;
+  editorGemType = skin.gem_type || skin.type || 'ruby';
+  editorSize = skin.size || 16;
+  editorPixels = skin.pixels ? [...skin.pixels] : new Array(256).fill(null);
+  editorBgPixels = skin.bg_pixels ? [...skin.bg_pixels] : new Array(256).fill(null);
+  editorFramePixels = skin.frame_pixels ? [...skin.frame_pixels] : new Array(256).fill(null);
+  // Load pixel timestamps or initialize
+  if(skin.pixel_ts && Array.isArray(skin.pixel_ts)){
+    editorPixelTimestamps = [...skin.pixel_ts];
+  }else{
+    editorPixelTimestamps = new Array(256).fill(null);
+    // Backfill timestamps for existing pixels
+    const now = Date.now();
+    for(let i=0;i<256;i++){
+      if(editorPixels[i]!==null) editorPixelTimestamps[i] = now;
+    }
+  }
+  editorActiveLayer = 'gem';
+  editorDirty = false;
+  editorInitialized = false;
+  showScreen('skineditor');
+  toast('✏️ Редагування: "'+skin.name+'"');
 }
 
 function initEditorCanvas(){
@@ -1677,26 +1787,15 @@ function setupCanvasDrawing(){
   function paint(idx){
     if(idx===null) return;
     const pixels = getActivePixels();
-    // Check if pixel is already colored
-    if(pixels[idx]!==null){
-      // Just change color (free)
-      pixels[idx] = editorColor;
-      editorDirty = true;
-      drawSkinCanvas();
-      updateEditorStats();
-      return;
-    }
-    // Need pixel_hours to paint new pixel
-    if(SAVE.resources.pixel_hours <= 0){
-      toast('❌ Недостатньо піксель-годин! Купіть в магазині.');
-      return;
-    }
-    SAVE.resources.pixel_hours -= 1;
+    const isNewPixel = pixels[idx] === null;
     pixels[idx] = editorColor;
+    // Record timestamp for new pixel
+    if(isNewPixel && editorActiveLayer === 'gem' && editorPixelTimestamps){
+      editorPixelTimestamps[idx] = Date.now();
+    }
     editorDirty = true;
     drawSkinCanvas();
     updateEditorStats();
-    saveToDisk();
   }
 
   function erase(idx){
@@ -1704,6 +1803,10 @@ function setupCanvasDrawing(){
     const pixels = getActivePixels();
     if(pixels[idx]!==null){
       pixels[idx]=null;
+      // Clear timestamp
+      if(editorActiveLayer === 'gem' && editorPixelTimestamps){
+        editorPixelTimestamps[idx] = null;
+      }
       editorDirty=true;
       drawSkinCanvas();
       updateEditorStats();
@@ -1733,14 +1836,30 @@ function drawSkinCanvas(){
   const total = size * size;
   const imageData = ctx.createImageData(size,size);
   let pixels;
-  if(editorActiveLayer === 'bg') pixels = editorBgPixels;
-  else if(editorActiveLayer === 'frame') pixels = editorFramePixels;
-  else pixels = editorPixels;
+  let usePixelTs = false;
+  if(editorActiveLayer === 'bg'){
+    pixels = editorBgPixels;
+  }else if(editorActiveLayer === 'frame'){
+    pixels = editorFramePixels;
+  }else{
+    pixels = editorPixels;
+    usePixelTs = true;
+  }
   for(let i=0;i<total;i++){
     const color = pixels[i];
     let r,g,b;
     if(color){
-      [r,g,b] = hexToRgb(color);
+      if(usePixelTs && editorPixelTimestamps && editorPixelTimestamps[i]){
+        const aged = getPixelColorWithAge(color, i, editorPixelTimestamps);
+        if(aged.startsWith('rgb(')){
+          const m = aged.match(/(\d+)/g);
+          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+        }else{
+          [r,g,b] = hexToRgb(aged);
+        }
+      }else{
+        [r,g,b] = hexToRgb(color);
+      }
     }else{
       r=26;g=29;b=51;
     }
@@ -1773,7 +1892,17 @@ function updateEditorStats(){
   const bgUsed = editorBgPixels.filter(p=>p!==null).length;
   const frameUsed = editorFramePixels.filter(p=>p!==null).length;
   const total = editorSize * editorSize;
-  document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год`;
+  // Calculate skin age
+  let ageStr = '';
+  if(editorEditingSkinId){
+    const skin = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
+    if(skin && skin.created){
+      const created = new Date(skin.created);
+      const hours = Math.floor((Date.now() - created.getTime()) / 3600000);
+      ageStr = hours < 1 ? '⏱ <1 год' : hours < 24 ? `⏱ ${hours} год` : `⏱ ${Math.floor(hours/24)} дн`;
+    }
+  }
+  document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}`;
   document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
 }
 
@@ -1803,8 +1932,81 @@ function saveSkinFromEditor(){
   }
   const gemLabels = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
   const label = gemLabels[editorGemType] || editorGemType;
+
+  // === EDITING EXISTING SKIN ===
+  if(editorEditingSkinId){
+    const existing = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
+    if(!existing){ toast('❌ Скін не знайдено для редагування'); return; }
+
+    // Count new pixels (ones that were null in saved skin but are now colored)
+    const oldPixels = existing.pixels || [];
+    let newPixels = 0;
+    for(let i=0;i<256;i++){
+      if(editorPixels[i]!==null && (oldPixels[i]===null || oldPixels[i]===undefined)){
+        newPixels++;
+      }
+    }
+    // Also count bg and frame new pixels
+    const oldBg = existing.bg_pixels || [];
+    const oldFrame = existing.frame_pixels || [];
+    for(let i=0;i<256;i++){
+      if(editorBgPixels[i]!==null && (oldBg[i]===null || oldBg[i]===undefined)) newPixels++;
+      if(editorFramePixels[i]!==null && (oldFrame[i]===null || oldFrame[i]===undefined)) newPixels++;
+    }
+
+    // Deduct pixel-hours for new pixels
+    if(newPixels > 0){
+      if(SAVE.resources.pixel_hours < newPixels){
+        toast('❌ Недостатньо піксель-годин! Потрібно '+newPixels+', є '+SAVE.resources.pixel_hours);
+        return;
+      }
+      SAVE.resources.pixel_hours -= newPixels;
+    }
+
+    // Update existing skin
+    existing.pixels = [...editorPixels];
+    existing.bg_pixels = bgUsed > 0 ? [...editorBgPixels] : null;
+    existing.frame_pixels = frameUsed > 0 ? [...editorFramePixels] : null;
+    // Save pixel timestamps
+    existing.pixel_ts = [...editorPixelTimestamps];
+    existing.age_hours = 0;
+    existing.updated = new Date().toISOString().split('T')[0];
+
+    saveToDisk();
+    updateUI();
+    if(newPixels > 0){
+      toast('💾 Скін "'+existing.name+'" оновлено! (-'+newPixels+' px-год)');
+    }else{
+      toast('💾 Скін "'+existing.name+'" оновлено!');
+    }
+    closeEditorAndGoBack();
+    return;
+  }
+
+  // === NEW SKIN ===
+  // Check if user has an unused canvas for this gem type
+  let canvasIdx = -1;
+  if(Array.isArray(SAVE.inventory.canvases)){
+    canvasIdx = SAVE.inventory.canvases.findIndex(c=>c.type===editorGemType);
+  }
+  if(canvasIdx < 0){
+    toast('❌ Немає холста для '+label+'! Купіть в магазині.');
+    return;
+  }
+
   const skinName = prompt('Назва скіна:', label+' Skin #'+(SAVE.inventory.skins.length+1));
   if(!skinName) return;
+
+  // Count pixels to deduct pixel-hours
+  const totalNewPixels = gemUsed + bgUsed + frameUsed;
+  if(totalNewPixels > 0 && SAVE.resources.pixel_hours < totalNewPixels){
+    toast('❌ Недостатньо піксель-годин! Потрібно '+totalNewPixels+', є '+SAVE.resources.pixel_hours);
+    return;
+  }
+  SAVE.resources.pixel_hours -= totalNewPixels;
+
+  // Consume the canvas
+  SAVE.inventory.canvases.splice(canvasIdx, 1);
 
   const today = new Date().toISOString().split('T')[0];
   const skin = {
@@ -1816,21 +2018,40 @@ function saveSkinFromEditor(){
     pixels: [...editorPixels],
     bg_pixels: bgUsed > 0 ? [...editorBgPixels] : null,
     frame_pixels: frameUsed > 0 ? [...editorFramePixels] : null,
+    pixel_ts: [...editorPixelTimestamps],
     age_hours: 0,
-    created: today
+    created: today,
+    updated: today
   };
   SAVE.inventory.skins.push(skin);
   SAVE.stats.skins_created = (SAVE.stats.skins_created || 0) + 1;
 
   saveToDisk();
   updateUI();
-  toast('💾 Скін "'+skin.name+'" збережено в інвентар!');
+  toast('💾 Скін "'+skin.name+'" збережено! (-'+totalNewPixels+' px-год)');
   closeEditorAndGoBack();
 }
 
-// ===== CANVAS LIST IN ACHIEVEMENTS (ВИДАЛЕНО — більше не використовується) =====
+// ===== CANVAS LIST IN ACHIEVEMENTS =====
 function updateAchieveCanvasList(){
-  // This function is intentionally empty — canvases have been removed from the system.
+  const container = document.getElementById('canvas-list');
+  if(!container) return;
+  const canvases = SAVE.inventory.canvases || [];
+  if(!canvases.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">🎨</span>Немає холстів. Купіть в магазині!</div>';
+    return;
+  }
+  const ctIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
+  const ctNames = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
+  let html = '';
+  for(const c of canvases){
+    html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;margin:4px 0;background:var(--surface2);border-radius:var(--radius-sm)">
+        <span>${ctIcons[c.type]||'🎨'} ${ctNames[c.type]||c.type}</span>
+        <button class="btn btn-small btn-primary" onclick="openSkinEditor('${c.type}')">🎨 Малювати</button>
+      </div>`;
+  }
+  container.innerHTML = html;
 }
 
 // ===== SKIN INVENTORY =====
@@ -1880,6 +2101,7 @@ function updateSkinList(){
           }
           <button class="btn btn-small btn-danger" onclick="sellSkinById('${s.id}')" style="flex:1">💰 Продати</button>
           <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${s.id}')" style="flex:1">📤 На ринок</button>
+          <button class="btn btn-small btn-secondary" onclick="openExistingSkin('${s.id}')" style="flex:0">✏️</button>
           <button class="btn btn-small btn-secondary" onclick="deleteSkinById('${s.id}')" style="flex:0">🗑</button>
         </div>
       </div>`;
@@ -1906,9 +2128,15 @@ function updateSkinList(){
             if(s.color_override){
               color = s.color_override;
             } else {
-              color = pixels[p] ? pixels[p] : '#1a1d33';
+              color = pixels[p] ? getPixelColorWithAge(pixels[p], p, s.pixel_ts) : '#1a1d33';
             }
-            const [r,g,b] = hexToRgb(color);
+            let r,g,b;
+            if(color && color.startsWith('rgb(')){
+              const m = color.match(/(\d+)/g);
+              r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+            }else{
+              [r,g,b] = hexToRgb(color || '#1a1d33');
+            }
             imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
           }
           ctx.putImageData(imageData,0,0);
@@ -1919,8 +2147,14 @@ function updateSkinList(){
           const ctx = bgCanvas.getContext('2d');
           const imageData = ctx.createImageData(sz, sz);
           for(let p=0;p<total;p++){
-            const color = s.bg_pixels[p] ? s.bg_pixels[p] : '#1a1d33';
-            const [r,g,b] = hexToRgb(color);
+            const color = s.bg_pixels[p] ? getPixelColorWithAge(s.bg_pixels[p], p, s.bg_pixel_ts || s.pixel_ts) : '#1a1d33';
+            let r,g,b;
+            if(color.startsWith('rgb(')){
+              const m = color.match(/(\d+)/g);
+              r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+            }else{
+              [r,g,b] = hexToRgb(color);
+            }
             imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
           }
           ctx.putImageData(imageData,0,0);
@@ -1931,8 +2165,14 @@ function updateSkinList(){
           const ctx = frCanvas.getContext('2d');
           const imageData = ctx.createImageData(sz, sz);
           for(let p=0;p<total;p++){
-            const color = s.frame_pixels[p] ? s.frame_pixels[p] : '#1a1d33';
-            const [r,g,b] = hexToRgb(color);
+            const color = s.frame_pixels[p] ? getPixelColorWithAge(s.frame_pixels[p], p, s.frame_pixel_ts || s.pixel_ts) : '#1a1d33';
+            let r,g,b;
+            if(color.startsWith('rgb(')){
+              const m = color.match(/(\d+)/g);
+              r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+            }else{
+              [r,g,b] = hexToRgb(color);
+            }
             imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
           }
           ctx.putImageData(imageData,0,0);
@@ -2046,6 +2286,55 @@ function getGemClipPath(gemType){
   return 'none';
 }
 
+// ===== PIXEL AGE / FADE SYSTEM =====
+const PIXEL_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function getPixelRenderColor(color, pixelTs, skinPixelTs){
+  if(!color) return null;
+  // Check pixel timestamp for aging
+  const ts = pixelTs || (skinPixelTs ? skinPixelTs[color._idx] : null);
+  if(ts && typeof ts === 'number'){
+    const age = Date.now() - ts;
+    if(age >= PIXEL_LIFETIME_MS){
+      // Pixel has expired — return gray
+      return '#555566';
+    }
+    if(age >= PIXEL_LIFETIME_MS * 0.75){
+      // Pixel is fading (75%+ of lifetime)
+      // Blend toward gray
+      const [r,g,b] = hexToRgb(color);
+      const factor = (age - PIXEL_LIFETIME_MS * 0.75) / (PIXEL_LIFETIME_MS * 0.25);
+      const fade = Math.min(1, factor);
+      const gray = (r+g+b)/3;
+      const nr = Math.round(r + (gray - r) * fade * 0.5);
+      const ng = Math.round(g + (gray - g) * fade * 0.5);
+      const nb = Math.round(b + (gray - b) * fade * 0.5);
+      return `rgb(${nr},${ng},${nb})`;
+    }
+  }
+  return color;
+}
+
+function getPixelColorWithAge(color, idx, pixel_ts){
+  if(!color) return null;
+  if(!pixel_ts || !Array.isArray(pixel_ts)) return color;
+  const ts = pixel_ts[idx];
+  if(!ts || typeof ts !== 'number') return color;
+  const age = Date.now() - ts;
+  if(age >= PIXEL_LIFETIME_MS) return '#555566'; // fully faded
+  if(age >= PIXEL_LIFETIME_MS * 0.75){
+    const [r,g,b] = hexToRgb(color);
+    const factor = (age - PIXEL_LIFETIME_MS * 0.75) / (PIXEL_LIFETIME_MS * 0.25);
+    const fade = Math.min(1, factor);
+    const gray = Math.round((r+g+b)/3);
+    const nr = Math.round(r + (gray - r) * fade * 0.5);
+    const ng = Math.round(g + (gray - g) * fade * 0.5);
+    const nb = Math.round(b + (gray - b) * fade * 0.5);
+    return `rgb(${nr},${ng},${nb})`;
+  }
+  return color;
+}
+
 function renderGemCompositeDataUrl(skin, gemType){
   const size = skin.size || 16;
   const canvas = document.createElement('canvas');
@@ -2084,7 +2373,14 @@ function renderGemCompositeDataUrl(skin, gemType){
   for(let i=0;i<total;i++){
     const color = gemPixels[i];
     if(color){
-      const [r,g,b] = hexToRgb(color);
+      const aged = getPixelColorWithAge(color, i, skin.pixel_ts);
+      let r,g,b;
+      if(aged.startsWith('rgb(')){
+        const m = aged.match(/(\d+)/g);
+        r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+      }else{
+        [r,g,b] = hexToRgb(aged);
+      }
       gemData.data[i*4]=r; gemData.data[i*4+1]=g; gemData.data[i*4+2]=b; gemData.data[i*4+3]=255;
     }else{
       gemData.data[i*4]=0; gemData.data[i*4+1]=0; gemData.data[i*4+2]=0; gemData.data[i*4+3]=0;
@@ -2098,7 +2394,14 @@ function renderGemCompositeDataUrl(skin, gemType){
     for(let i=0;i<total;i++){
       const color = skin.frame_pixels[i];
       if(color){
-        const [r,g,b] = hexToRgb(color);
+        const aged = getPixelColorWithAge(color, i, skin.frame_pixel_ts || skin.pixel_ts);
+        let r,g,b;
+        if(aged.startsWith('rgb(')){
+          const m = aged.match(/(\d+)/g);
+          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+        }else{
+          [r,g,b] = hexToRgb(aged);
+        }
         frameData.data[i*4]=r; frameData.data[i*4+1]=g; frameData.data[i*4+2]=b; frameData.data[i*4+3]=255;
       }else{
         frameData.data[i*4]=0; frameData.data[i*4+1]=0; frameData.data[i*4+2]=0; frameData.data[i*4+3]=0;
