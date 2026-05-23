@@ -2903,7 +2903,7 @@ async function loadChatFromGitHub(){
     chatSha = data.sha;
     const content = fromBase64(data.content);
     const messages = JSON.parse(content);
-    if(Array.isArray(messages) && messages.length){
+    if(Array.isArray(messages)){
       // Replace local chat with GitHub data (shared chat)
       SAVE.chat = messages.slice(-50);
     }
@@ -2913,13 +2913,28 @@ async function loadChatFromGitHub(){
 
 async function saveChatToGitHub(){
   try {
-    // Re-read to get latest sha
+    // Re-read full content from GitHub to merge with other players' messages
     const getR = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
       headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
     });
     if(getR.ok){
       const getData = await getR.json();
       chatSha = getData.sha;
+      // Merge: get latest from GitHub, add any local messages not yet synced
+      const remoteContent = fromBase64(getData.content);
+      const remoteMessages = JSON.parse(remoteContent);
+      if(Array.isArray(remoteMessages)){
+        // Build a set of hashes from remote messages
+        const remoteHashes = new Set(remoteMessages.map(m=>m.hash));
+        // Add local messages that aren't in the remote set
+        for(const localMsg of SAVE.chat){
+          if(!remoteHashes.has(localMsg.hash)){
+            remoteMessages.push(localMsg);
+          }
+        }
+        // Use merged messages
+        SAVE.chat = remoteMessages;
+      }
     }
     const messages = SAVE.chat.slice(-50);
     const payload = {
@@ -2945,7 +2960,23 @@ async function saveChatToGitHub(){
       if(retryR.ok){
         const retryData = await retryR.json();
         chatSha = retryData.sha;
-        const retryPayload = {...payload, sha: chatSha};
+        // Merge again on retry
+        const retryContent = fromBase64(retryData.content);
+        const retryMessages = JSON.parse(retryContent);
+        if(Array.isArray(retryMessages)){
+          const retryHashes = new Set(retryMessages.map(m=>m.hash));
+          for(const localMsg of SAVE.chat){
+            if(!retryHashes.has(localMsg.hash)){
+              retryMessages.push(localMsg);
+            }
+          }
+          SAVE.chat = retryMessages;
+        }
+        const retryPayload = {
+          message: '💬 Chat update',
+          content: toBase64(JSON.stringify(SAVE.chat.slice(-50), null, 2)),
+          sha: chatSha
+        };
         const r2 = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
           method: 'PUT',
           headers: {Authorization: 'Bearer '+GITHUB_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json'},
