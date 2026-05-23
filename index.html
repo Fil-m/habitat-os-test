@@ -315,7 +315,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <span class="icon">🏪</span>
         <span class="label">Магазин</span>
       </button>
-      <button class="dash-btn skin" onclick="showScreen('skineditor')">
+      <button class="dash-btn skin" onclick="showScreen('achieve')">
         <span class="icon">🎨</span>
         <span class="label">Редактор</span>
       </button>
@@ -524,14 +524,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div style="flex:1;min-height:20px"></div>
   </div>
 
-  <!-- Achievements Screen -->
+  <!-- Achievements Screen (includes inventory, canvases, packs, stats, bonuses — all in one scroll) -->
   <div id="screen-achieve" class="screen">
     <div class="header">
       <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
       <h1 style="font-size:15px">🏆 АЧІВКИ</h1>
       <button class="btn btn-small btn-gold" onclick="showScreen('shop')">🛒</button>
     </div>
-    <!-- Statistics -->
+
+    <!-- Section 1: Statistics -->
     <div class="card">
       <div class="card-title">📊 Статистика</div>
       <div style="font-family:var(--mono);font-size:14px;display:grid;gap:8px">
@@ -540,7 +541,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div>🏆 Рекорд: <strong id="stat-record">0</strong></div>
       </div>
     </div>
-    <!-- Purchased Achievements -->
+
+    <!-- Section 2: Purchased Achievements (bonuses) -->
     <div class="card">
       <div class="card-title">🏅 Придбані ачівки</div>
       <div class="ach-list" id="ach-list">
@@ -550,17 +552,32 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
       </div>
     </div>
-    <!-- Purchased Packs -->
+
+    <!-- Section 3: Inventory — My Skins -->
+    <div class="card">
+      <div class="card-title">🎨 Інвентар — Мої скіни</div>
+      <div id="skin-list">
+        <div class="empty-state"><span class="icon">🎨</span>Створіть скін у редакторі</div>
+      </div>
+    </div>
+
+    <!-- Section 4: My Canvases -->
+    <div class="card">
+      <div class="card-title">🖼 Мої холсти</div>
+      <div id="achieve-canvas-list">
+        <div class="empty-state"><span class="icon">🖼</span>Купіть холст у магазині</div>
+      </div>
+    </div>
+
+    <!-- Section 5: My Packs -->
     <div class="card">
       <div class="card-title">📦 Мої паки</div>
       <div id="packs-list">
-        <div class="empty-state">
-          <span class="icon">📦</span>
-          Купіть пак у магазині
-        </div>
+        <div class="empty-state"><span class="icon">📦</span>Купіть пак у магазині</div>
       </div>
     </div>
-    <!-- Buttons -->
+
+    <!-- Bottom buttons -->
     <div style="margin:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btn-primary btn-block" onclick="showScreen('shop')">
         🛒 В магазин
@@ -572,24 +589,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div style="flex:1;min-height:20px"></div>
   </div>
 
-  <!-- Skin Editor Screen -->
+  <!-- Skin Editor Screen (separate screen, opened from canvas click) -->
   <div id="screen-skineditor" class="screen">
     <div class="header">
-      <button class="btn btn-secondary btn-small" id="editor-back-btn" onclick="showScreen('dashboard')">← Назад</button>
+      <button class="btn btn-secondary btn-small" id="editor-back-btn" onclick="closeEditorAndGoBack()">← Назад</button>
       <h1 style="font-size:15px">🎨 РЕДАКТОР</h1>
       <div class="resources">
         <span class="resource">🎨<span class="val" id="editor-pixels-left">0</span></span>
       </div>
     </div>
-    <!-- Canvas selection view (shown when no canvas is being edited) -->
-    <div id="editor-canvas-select">
-      <div class="editor-stats" id="editor-canvas-stats" style="padding:8px 16px;text-align:center;font-size:13px;color:var(--text2)">Оберіть холст для редагування</div>
-      <div id="editor-canvas-list" style="margin:0 16px"></div>
-    </div>
-    <!-- Drawing view (shown when editing a canvas) -->
-    <div id="editor-drawing-view" style="display:none">
-      <button class="btn btn-secondary btn-small" onclick="editorBackToList()" style="margin:4px 16px">↩️ До списку холстів</button>
-      <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / 16 · 🎨 500 px-год</div>
+    <!-- Drawing view (always shown, no canvas selection — canvases are in achievements) -->
+    <div id="editor-drawing-view">
+      <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / 256 · 🎨 500 px-год</div>
       <div class="editor-wrap">
         <div class="editor-canvas-wrap">
           <canvas id="skin-canvas" width="16" height="16"></canvas>
@@ -740,6 +751,7 @@ function updateUI(){
   }
   updateAchList();
   updateSkinList();
+  updateAchieveCanvasList();
   updatePacksList();
   updateEffectsUI();
 }
@@ -754,14 +766,23 @@ function showScreen(id){
   });
   if(id==='match3' && !window._m3Started) startMatch3();
   if(id==='skineditor') {
-    renderCanvasList();
-    // Ensure we're in canvas selection mode
-    document.getElementById('editor-canvas-select').style.display = 'block';
-    document.getElementById('editor-drawing-view').style.display = 'none';
-    document.getElementById('editor-back-btn').onclick = function(){ showScreen('dashboard'); };
+    // Editor opens with a pending canvas from achievements or shop
+    if(window.editorPendingCanvasId) {
+      openCanvasEditor(window.editorPendingCanvasId);
+      window.editorPendingCanvasId = null;
+    } else {
+      // No canvas selected — redirect to achievements
+      toast('❌ Оберіть холст в ачівках');
+      showScreen('achieve');
+      return;
+    }
   }
   if(id==='chat') renderChat();
   if(id==='shop') renderShopPacks();
+  if(id==='achieve') {
+    // Make sure all sections are rendered when switching to achievements
+    updateAchieveCanvasList();
+  }
   updateUI();
 }
 
@@ -998,6 +1019,7 @@ function processMatches(matches, comboLevel){
     },150);
   },150);
 }
+
 // ===== EFFECT INTEGRATION INTO MATCH-3 =====
 
 function applyGravity(){
@@ -1267,7 +1289,12 @@ function buyCanvas(type){
   });
   saveToDisk();
   updateUI();
-  toast("✅ "+info.name+" придбано! З'явився в редакторі.");
+  // After buying canvas, offer to draw now
+  if(confirm("✅ "+info.name+" придбано! Малювати зараз?")){
+    openEditorWithCanvas(canvasId);
+  } else {
+    showScreen('achieve');
+  }
 }
 
 function buyItem(itemId){
@@ -1472,39 +1499,10 @@ let editorCanvasId = null;
 let editorDirty = false;
 let editorInitialized = false;
 
-// ===== CANVAS SELECTION =====
-function renderCanvasList(){
-  const container = document.getElementById('editor-canvas-list');
-  if(!container) return;
-  const canvases = SAVE.inventory.canvases || [];
-  if(!canvases.length){
-    container.innerHTML = `
-      <div class="empty-state">
-        <span class="icon">🖼</span>
-        🎨 У вас немає холстів. Купіть в магазині!
-      </div>
-      <button class="btn btn-primary btn-block" onclick="showScreen('shop')" style="margin:12px 0">
-        🛒 Перейти в магазин
-      </button>`;
-    return;
-  }
-  let html = '';
-  for(let i=0;i<canvases.length;i++){
-    const c = canvases[i];
-    const info = CANVAS_TYPES[c.type] || CANVAS_TYPES[c.gem_type] || {name:c.type+' Canvas', icon:'🖼'};
-    const used = c.pixels ? c.pixels.filter(p=>p!==null).length : 0;
-    const total = c.size * c.size;
-    const gt = c.gem_type || c.type;
-    html += `<div class="shop-item" onclick="openCanvasEditor('${c.id}')" style="cursor:pointer">
-      <div class="shop-icon">${info.icon}</div>
-      <div class="shop-info">
-        <div class="shop-name">${info.name}</div>
-        <div class="shop-desc">${used}/${total} пікселів · ${gt}</div>
-      </div>
-      <div style="font-size:12px;color:var(--text2);white-space:nowrap">✏ Редагувати</div>
-    </div>`;
-  }
-  container.innerHTML = html;
+// ===== OPEN EDITOR FROM ACHIEVEMENTS / SHOP =====
+function openEditorWithCanvas(canvasId){
+  window.editorPendingCanvasId = canvasId;
+  showScreen('skineditor');
 }
 
 function openCanvasEditor(canvasId){
@@ -1516,12 +1514,6 @@ function openCanvasEditor(canvasId){
   editorPixels = canvas.pixels ? [...canvas.pixels] : new Array(canvas.size*canvas.size).fill(null);
   editorDirty = false;
 
-  // Switch to drawing view
-  document.getElementById('editor-canvas-select').style.display = 'none';
-  document.getElementById('editor-drawing-view').style.display = 'flex';
-  document.getElementById('editor-drawing-view').style.flexDirection = 'column';
-  document.getElementById('editor-back-btn').onclick = editorBackToList;
-
   // Setup canvas
   const canvasEl = document.getElementById('skin-canvas');
   canvasEl.width = editorSize;
@@ -1532,13 +1524,14 @@ function openCanvasEditor(canvasId){
   updateEditorStats();
 }
 
-function editorBackToList(){
-  document.getElementById('editor-canvas-select').style.display = 'block';
-  document.getElementById('editor-drawing-view').style.display = 'none';
-  document.getElementById('editor-back-btn').onclick = function(){ showScreen('dashboard'); };
+function closeEditorAndGoBack(){
+  if(editorDirty){
+    if(!confirm('Незбережені зміни будуть втрачені. Продовжити?')) return;
+  }
   editorCanvasId = null;
   editorInitialized = false;
-  renderCanvasList();
+  editorDirty = false;
+  showScreen('achieve');
 }
 
 function buildPalette(){
@@ -1719,7 +1712,35 @@ function saveSkinFromEditor(){
   saveToDisk();
   updateUI();
   toast('💾 Скін "'+skin.name+'" збережено в інвентар!');
-  editorBackToList();
+  closeEditorAndGoBack();
+}
+
+// ===== CANVAS LIST IN ACHIEVEMENTS =====
+function updateAchieveCanvasList(){
+  const container = document.getElementById('achieve-canvas-list');
+  if(!container) return;
+  const canvases = SAVE.inventory.canvases || [];
+  if(!canvases.length){
+    container.innerHTML = `<div class="empty-state"><span class="icon">🖼</span>У вас немає холстів. Купіть в магазині!</div>`;
+    return;
+  }
+  let html = '';
+  for(let i=0;i<canvases.length;i++){
+    const c = canvases[i];
+    const info = CANVAS_TYPES[c.type] || CANVAS_TYPES[c.gem_type] || {name:c.type+' Canvas', icon:'🖼'};
+    const used = c.pixels ? c.pixels.filter(p=>p!==null).length : 0;
+    const total = c.size * c.size;
+    const gt = c.gem_type || c.type;
+    html += `<div class="shop-item" style="cursor:default">
+      <div class="shop-icon">${info.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${info.name}</div>
+        <div class="shop-desc">${used}/${total} пікселів · ${gt}</div>
+      </div>
+      <button class="btn btn-small btn-primary" onclick="openEditorWithCanvas('${c.id}')">✏️ Малювати</button>
+    </div>`;
+  }
+  container.innerHTML = html;
 }
 
 // ===== SKIN INVENTORY =====
