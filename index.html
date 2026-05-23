@@ -344,9 +344,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <span class="icon">🏪</span>
         <span class="label">Магазин</span>
       </button>
-      <button class="dash-btn skin" onclick="openSkinEditor()">
+      <button class="dash-btn shop" onclick="showScreen('shop')">
         <span class="icon">🎨</span>
-        <span class="label">Створити скін</span>
+        <span class="label">Холсти</span>
       </button>
       <button class="dash-btn chat" onclick="showScreen('chat')">
         <span class="icon">💬</span>
@@ -394,8 +394,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <span class="resource">🪙<span class="val" id="shop-gold">0</span></span>
       </div>
     </div>
+    <div class="shop-category" style="display:flex;align-items:center;gap:8px">
+      <span>🎮 Гра:</span>
+      <select id="shop-game-filter" onchange="applyShopFilter()" style="background:var(--surface);color:var(--text);border:1px solid var(--surface2);border-radius:var(--radius-sm);padding:6px 10px;font-family:var(--font);font-size:13px">
+        <option value="match3">Match-3</option>
+        <option value="all">Всі ігри</option>
+      </select>
+    </div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyItem('pixels_100')">
+      <div class="shop-item" onclick="buyItem('pixels_100')" data-game="skins">
         <div class="shop-icon">🎨</div>
         <div class="shop-info">
           <div class="shop-name">100 піксель-годин</div>
@@ -403,7 +410,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="shop-price" id="shop-price-pixels_100">8 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyItem('pixels_500')">
+      <div class="shop-item" onclick="buyItem('pixels_500')" data-game="skins">
         <div class="shop-icon">🎨🎨</div>
         <div class="shop-info">
           <div class="shop-name">500 піксель-годин</div>
@@ -412,7 +419,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="shop-price" id="shop-price-pixels_500">35 🪙</div>
       </div>
     </div>
-    <div class="shop-category">🎨 Холсти для скінів</div>
+    <div class="shop-category" data-game="skins">🎨 Холсти для скінів</div>
     <div style="margin:0 16px">
       <div class="shop-item" onclick="buyCanvas('ruby')">
         <div class="shop-icon">🟣</div>
@@ -447,7 +454,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="shop-price" id="canvas-price-emerald">20 🪙</div>
       </div>
     </div>
-    <div class="shop-category">⚡ Покращення Match-3</div>
+    <div class="shop-category" data-game="match3">⚡ Покращення Match-3</div>
     <div style="margin:0 16px">
       <div class="shop-item" onclick="buyAchievement('extra_moves')">
         <div class="shop-icon">🔄</div>
@@ -506,15 +513,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="shop-price" id="ach-price-target_lock">30 🪙</div>
       </div>
     </div>
-    <div class="shop-category">🏪 Торгівля гравців</div>
+    <div class="shop-category" data-game="all">🏪 Торгівля гравців</div>
     <div style="margin:0 16px" id="market-listings">
       <div class="empty-state"><span class="icon">🏪</span>Немає активних пропозицій</div>
     </div>
-    <div class="shop-category">📦 Паки налаштувань</div>
+    <div class="shop-category" data-game="match3">📦 Паки налаштувань</div>
     <div style="margin:0 16px" id="shop-pack-list">
       <div class="empty-state"><span class="icon">📦</span>Завантаження...</div>
     </div>
-    <div class="shop-category">⚡ Ефекти та Правила</div>
+    <div class="shop-category" data-game="match3">⚡ Ефекти та Правила</div>
     <div style="margin:0 16px">
       <!-- Visual Effects -->
       <div style="font-size:12px;font-weight:600;color:var(--neon2);margin:8px 0 4px">✨ Візуальні ефекти</div>
@@ -711,8 +718,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
     <!-- Bottom buttons -->
     <div style="margin:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn btn-primary btn-block" onclick="openSkinEditor()">
-        🎨 Створити скін
+      <button class="btn btn-primary btn-block" onclick="showScreen('shop')">
+        🎨 Холсти
       </button>
       <button class="btn btn-gold btn-block" onclick="showScreen('shop')">
         🛒 В магазин
@@ -942,6 +949,7 @@ function loadSave(){
 }
 
 let SAVE = loadSave();
+let chatPollInterval = null;
 
 function saveToDisk(){
   try{
@@ -1491,6 +1499,25 @@ function updatePacksList(){
     </div>`;
   }
   container.innerHTML = html;
+}
+
+function applyShopFilter(){
+  const filter = document.getElementById('shop-game-filter');
+  if(!filter) return;
+  const value = filter.value;
+  const items = document.querySelectorAll('#screen-shop .shop-item, #screen-shop .shop-category');
+  for(const item of items){
+    if(value === 'all'){
+      item.style.display = '';
+    }else{
+      const game = item.dataset.game;
+      if(game && game !== value){
+        item.style.display = 'none';
+      }else{
+        item.style.display = '';
+      }
+    }
+  }
 }
 
 // ===== CANVAS TYPES FOR SKIN EDITOR =====
@@ -2404,7 +2431,7 @@ function getGemClipPath(gemType){
     'circle(50% at 50% 50%)',                          // ruby — circle
     'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',     // sapphire — diamond
     'polygon(50% 5%, 95% 95%, 5% 95%)',                 // gold — triangle
-    'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'      // emerald — diamond
+    'polygon(33% 0%, 66% 0%, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0% 66%, 0% 33%, 33% 33%)'      // emerald — square+cross
   ];
   const gemNames = ['ruby','sapphire','gold','emerald'];
   if(typeof gemType === 'number' && gemType >= 0 && gemType < 4) return shapes[gemType];
@@ -2431,32 +2458,6 @@ function blendColor(color1, color2, ratio){
   const g = Math.round(g1 + (g2 - g1) * ratio);
   const b = Math.round(b1 + (b2 - b1) * ratio);
   return `rgb(${r},${g},${b})`;
-}
-
-function getPixelRenderColor(color, pixelTs, skinPixelTs){
-  if(!color) return null;
-  // Check pixel timestamp for aging
-  const ts = pixelTs || (skinPixelTs ? skinPixelTs[color._idx] : null);
-  if(ts && typeof ts === 'number'){
-    const age = Date.now() - ts;
-    if(age >= PIXEL_LIFETIME_MS){
-      // Pixel has expired — return gray
-      return '#555566';
-    }
-    if(age >= PIXEL_LIFETIME_MS * 0.75){
-      // Pixel is fading (75%+ of lifetime)
-      // Blend toward gray
-      const [r,g,b] = hexToRgb(color);
-      const factor = (age - PIXEL_LIFETIME_MS * 0.75) / (PIXEL_LIFETIME_MS * 0.25);
-      const fade = Math.min(1, factor);
-      const gray = (r+g+b)/3;
-      const nr = Math.round(r + (gray - r) * fade * 0.5);
-      const ng = Math.round(g + (gray - g) * fade * 0.5);
-      const nb = Math.round(b + (gray - b) * fade * 0.5);
-      return `rgb(${nr},${ng},${nb})`;
-    }
-  }
-  return color;
 }
 
 function getPixelColorWithAge(color, idx, pixel_ts, pixel_lt){
@@ -2486,7 +2487,8 @@ function renderGemCompositeDataUrl(skin, gemType){
   const ctx = canvas.getContext('2d');
 
   // 1. Apply clip path for gem shape
-  const gemIdx = (typeof gemType === 'number') ? gemType : ['ruby','sapphire','gold','emerald'].indexOf(gemType) || 0;
+  const gemIdx = (typeof gemType === 'number') ? gemType : ['ruby','sapphire','gold','emerald'].indexOf(gemType);
+  if(gemIdx < 0 || gemIdx > 3) gemIdx = 0;
   const clipPath = new Path2D();
   const cx = size/2, cy = size/2, r = size/2 - 0.5;
   switch(gemIdx){
@@ -2501,17 +2503,43 @@ function renderGemCompositeDataUrl(skin, gemType){
       clipPath.moveTo(cx, 0.5*size/16); clipPath.lineTo(size*0.95, size*0.95); clipPath.lineTo(size*0.05, size*0.95);
       clipPath.closePath();
       break;
-    case 3: // Emerald — diamond
-      clipPath.moveTo(cx, 0); clipPath.lineTo(size, cy); clipPath.lineTo(cx, size); clipPath.lineTo(0, cy);
+    case 3: // Emerald — square+cross
+      // 12-point polygon for square+cross shape
+      clipPath.moveTo(size*0.33, 0); clipPath.lineTo(size*0.66, 0); clipPath.lineTo(size*0.66, size*0.33);
+      clipPath.lineTo(size, size*0.33); clipPath.lineTo(size, size*0.66); clipPath.lineTo(size*0.66, size*0.66);
+      clipPath.lineTo(size*0.66, size); clipPath.lineTo(size*0.33, size); clipPath.lineTo(size*0.33, size*0.66);
+      clipPath.lineTo(0, size*0.66); clipPath.lineTo(0, size*0.33); clipPath.lineTo(size*0.33, size*0.33);
       clipPath.closePath();
       break;
   }
+  // 0. Draw background pixels first (full cell, no clip)
+  const total = size * size;
+  if(skin.bg_pixels && skin.bg_pixels.some(p=>p!==null)){
+    const bgData = ctx.createImageData(size, size);
+    for(let i=0;i<total;i++){
+      const color = skin.bg_pixels[i];
+      if(color){
+        let r,g,b;
+        if(color.startsWith('rgb(')){
+          const m = color.match(/(\d+)/g);
+          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+        }else{
+          [r,g,b] = hexToRgb(color);
+        }
+        bgData.data[i*4]=r; bgData.data[i*4+1]=g; bgData.data[i*4+2]=b; bgData.data[i*4+3]=255;
+      }else{
+        bgData.data[i*4]=0; bgData.data[i*4+1]=0; bgData.data[i*4+2]=0; bgData.data[i*4+3]=0;
+      }
+    }
+    ctx.putImageData(bgData, 0, 0);
+  }
+
+  // 1. Apply clip path for gem shape
   ctx.save();
   ctx.clip(clipPath);
 
   // 2. Draw gem pixels
   const gemPixels = skin.pixels || [];
-  const total = size * size;
   const gemData = ctx.createImageData(size, size);
   for(let i=0;i<total;i++){
     const color = gemPixels[i];
@@ -2557,78 +2585,13 @@ function renderGemCompositeDataUrl(skin, gemType){
   return canvas.toDataURL();
 }
 
-// ===== CHAT =====
-function sendChat(){
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if(!text){
-    toast('❌ Введіть повідомлення');
-    return;
-  }
-  const hash = Math.random().toString(16).slice(2,10);
-  const msg = {
-    hash: hash,
-    author: 'Анонім',
-    text: text,
-    time: Date.now(),
-    trade: null
-  };
-  // Check for trade pattern: "sell:item:price" or "buy:item:price"
-  const tradeMatch = text.match(/^(sell|buy):(\w+):(\d+)$/i);
-  if(tradeMatch){
-    msg.trade = {
-      type: tradeMatch[1].toLowerCase(),
-      item: tradeMatch[2].toLowerCase(),
-      price: parseInt(tradeMatch[3])
-    };
-  }
-  SAVE.chat.push(msg);
-  saveToDisk();
-  input.value='';
-  renderChat();
-}
-
-function renderChat(){
-  const container = document.getElementById('chat-messages');
-  if(!SAVE.chat.length){
-    container.innerHTML='<div class="empty-state"><span class="icon">💬</span>Ще немає повідомлень</div>';
-    return;
-  }
-  // Show last 50 messages
-  const msgs = SAVE.chat.slice(-50);
-  let html='';
-  for(const m of msgs){
-    html+=`<div class="chat-msg">
-      <div><span class="chat-hash">[${m.hash}]</span> <span class="chat-author">${m.author}</span></div>
-      <div class="chat-text">${escapeHtml(m.text)}</div>`;
-    if(m.trade){
-      const action = m.trade.type==='sell'?'💰 Продає':'🛒 Купує';
-      html+=`<div class="chat-trade">
-        ${action} <strong>${m.trade.item}</strong> за ${m.trade.price} 🪙
-        <span class="trade-action" onclick="acceptTrade('${m.hash}')">[Прийняти]</span>
-      </div>`;
-    }
-    html+=`</div>`;
-  }
-  container.innerHTML=html;
-  container.scrollTop = container.scrollHeight;
-}
-
-function clearChat(){
-  if(!confirm('Очистити весь чат?')) return;
-  SAVE.chat = [];
-  saveToDisk();
-  renderChat();
-  toast('🗑 Чат очищено');
-}
-
+// ===== EXPORT / IMPORT PROGRESS =====
 function escapeHtml(str){
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
-// ===== EXPORT / IMPORT PROGRESS =====
 function exportSave(){
   const blob = new Blob([JSON.stringify(SAVE, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
@@ -2736,8 +2699,6 @@ function updateGithubUI(){
 }
 
 // ===== IMPROVED CHAT =====
-// Override renderChat to show date + player name + load from GitHub
-const _origRenderChat = renderChat || function(){};
 async function renderChat(){
   const container = document.getElementById('chat-messages');
   if(!container) return;
@@ -2774,8 +2735,6 @@ async function renderChat(){
 }
 
 // ===== CHAT POLLING =====
-let chatPollInterval = null;
-
 function startChatPolling(){
   if(chatPollInterval) clearInterval(chatPollInterval);
   chatPollInterval = setInterval(()=>{
@@ -2804,7 +2763,6 @@ function stopChatPolling(){
 }
 
 // Override sendChat to use player name + sync with GitHub
-const _origSendChat = sendChat || function(){};
 async function sendChat(){
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
