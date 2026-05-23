@@ -403,7 +403,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </select>
     </div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyItem('pixels_100')" data-game="skins">
+      <div class="shop-item" onclick="buyItem('pixels_100')" data-game="match3">
         <div class="shop-icon">🎨</div>
         <div class="shop-info">
           <div class="shop-name">100 піксель-годин</div>
@@ -411,7 +411,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="shop-price" id="shop-price-pixels_100">8 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyItem('pixels_500')" data-game="skins">
+      <div class="shop-item" onclick="buyItem('pixels_500')" data-game="match3">
         <div class="shop-icon">🎨🎨</div>
         <div class="shop-info">
           <div class="shop-name">500 піксель-годин</div>
@@ -420,9 +420,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="shop-price" id="shop-price-pixels_500">35 🪙</div>
       </div>
     </div>
-    <div class="shop-category" data-game="skins">🎨 Холсти для скінів</div>
+    <div class="shop-category" data-game="match3">🎨 Холсти для скінів</div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyCanvas('ruby')">
+      <div class="shop-item" onclick="buyCanvas('ruby')" data-game="match3">
         <div class="shop-icon">🟣</div>
         <div class="shop-info">
           <div class="shop-name">Ruby Canvas — 16×16</div>
@@ -430,7 +430,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="shop-price" id="canvas-price-ruby">20 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('sapphire')">
+      <div class="shop-item" onclick="buyCanvas('sapphire')" data-game="match3">
         <div class="shop-icon">🔵</div>
         <div class="shop-info">
           <div class="shop-name">Sapphire Canvas — 16×16</div>
@@ -438,7 +438,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="shop-price" id="canvas-price-sapphire">20 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('gold')">
+      <div class="shop-item" onclick="buyCanvas('gold')" data-game="match3">
         <div class="shop-icon">🟡</div>
         <div class="shop-info">
           <div class="shop-name">Gold Canvas — 16×16</div>
@@ -446,7 +446,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="shop-price" id="canvas-price-gold">20 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('emerald')">
+      <div class="shop-item" onclick="buyCanvas('emerald')" data-game="match3">
         <div class="shop-icon">🟢</div>
         <div class="shop-info">
           <div class="shop-name">Emerald Canvas — 16×16</div>
@@ -1710,7 +1710,7 @@ function updateEffectsUI(){
 
 // Refresh game board when skins change
 function refreshGameSkins(){
-  const gameScreen = document.getElementById('screen-game');
+  const gameScreen = document.getElementById('screen-match3');
   if(gameScreen && gameScreen.classList.contains('active')){
     renderBoard();
   }
@@ -2184,7 +2184,7 @@ function saveSkinFromEditor(){
 
   saveToDisk();
   updateUI();
-  toast('💾 Скін "'+skin.name+'" збережено! (-'+totalNewPixels+' px-год)');
+  toast('💾 Скін "'+skin.name+'" збережено! (-'+editorSessionCost+' px-год)');
   closeEditorAndGoBack();
 }
 
