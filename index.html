@@ -386,42 +386,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <span class="resource">🪙<span class="val" id="shop-gold">0</span></span>
       </div>
     </div>
-    <div class="shop-category">🎨 Холсти камінців</div>
-    <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyCanvas('ruby')">
-        <div class="shop-icon">🟣</div>
-        <div class="shop-info">
-          <div class="shop-name">Ruby Canvas</div>
-          <div class="shop-desc">Скін для круглих червоних камінців</div>
-        </div>
-        <div class="shop-price" id="shop-price-canvas_ruby">20 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyCanvas('sapphire')">
-        <div class="shop-icon">🔵</div>
-        <div class="shop-info">
-          <div class="shop-name">Sapphire Canvas</div>
-          <div class="shop-desc">Скін для ромбових синіх камінців</div>
-        </div>
-        <div class="shop-price" id="shop-price-canvas_sapphire">20 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyCanvas('gold')">
-        <div class="shop-icon">🟡</div>
-        <div class="shop-info">
-          <div class="shop-name">Gold Canvas</div>
-          <div class="shop-desc">Скін для трикутних жовтих камінців</div>
-        </div>
-        <div class="shop-price" id="shop-price-canvas_gold">20 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyCanvas('emerald')">
-        <div class="shop-icon">🟢</div>
-        <div class="shop-info">
-          <div class="shop-name">Emerald Canvas</div>
-          <div class="shop-desc">Скін для квадратних з хрестом зелених камінців</div>
-        </div>
-        <div class="shop-price" id="shop-price-canvas_emerald">20 🪙</div>
-      </div>
-    </div>
-    <div class="shop-category">⏱ Піксель-години</div>
     <div style="margin:0 16px">
       <div class="shop-item" onclick="buyItem('pixels_100')">
         <div class="shop-icon">🎨</div>
@@ -707,8 +671,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <button class="btn btn-primary btn-block" onclick="showScreen('shop')">
         🛒 В магазин
       </button>
-      <button class="btn btn-gold btn-block" onclick="createPack()">
-        📦 Створити пак
+      <button class="btn btn-gold btn-block" onclick="showScreen('shop')">
+        📦 Купити пак
       </button>
     </div>
     <div style="flex:1;min-height:20px"></div>
@@ -733,9 +697,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="editor-palette" id="editor-palette"></div>
         <div class="editor-tools">
           <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
-          <button class="btn btn-success btn-small" onclick="saveSkinFromEditor()">💾 Зберегти в інвентар</button>
-        </div>
-        <div style="font-size:12px;color:var(--text2);text-align:center;margin-top:4px">
           Клік = 1 піксель-година · ПКМ = стерти
         </div>
       </div>
@@ -746,9 +707,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <!-- Chat Screen -->
   <div id="screen-chat" class="screen">
     <div class="header">
-      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
       <h1 style="font-size:15px">💬 ЧАТ</h1>
-      <div style="display:flex;gap:4px">
+      <div style="display:flex;gap:6px">
         <button class="btn btn-small btn-gold" onclick="showTradePanel()" style="font-size:10px">🤝</button>
         <button class="btn btn-small btn-secondary" onclick="clearChat()" style="font-size:10px">🗑</button>
       </div>
@@ -986,7 +946,7 @@ function updateUI(){
 }
 
 // ===== SCREEN NAV =====
-function showScreen(id){
+async function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const screen = document.getElementById('screen-'+id);
   if(screen) screen.classList.add('active');
@@ -1006,12 +966,13 @@ function showScreen(id){
       return;
     }
   }
-  if(id==='chat') renderChat();
+  if(id==='chat') await renderChat();
   if(id==='shop') { renderShopPacks(); renderMarketListings(); }
   if(id==='profile') updateProfile();
   if(id==='achieve') {
     // Make sure all sections are rendered when switching to achievements
     updateAchieveCanvasList();
+    updatePacksList();
   }
   updateUI();
 }
@@ -1315,142 +1276,130 @@ const CANVAS_TYPES = {
   emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
 };
 
-// ===== PACK SYSTEM =====
-const SYSTEM_PACKS = [
-  {
+// ===== SYSTEM PACKS =====
+const SYSTEM_PACKS = {
+  neon_night: {
     id: 'neon_night',
-    name: '🌟 Neon Night',
-    author: 'System',
-    price: 25,
-    desc: 'Неонові Ruby та Sapphire',
-    skins: {
-      ruby: {color: '#ff00ff'},
-      sapphire: {color: '#00ffff'}
-    }
+    name: 'Neon Night',
+    icon: '🌃',
+    price: 50,
+    desc: 'Темна палітра з неоновими акцентами для всіх типів',
+    gem_type: null, // applies to all
+    color_override: '#00f0ff',
+    skins: [
+      {name:'Neon Ruby', gem_type:'ruby', color_override:'#ff44ff'},
+      {name:'Neon Sapphire', gem_type:'sapphire', color_override:'#44aaff'},
+      {name:'Neon Gold', gem_type:'gold', color_override:'#ffcc44'},
+      {name:'Neon Emerald', gem_type:'emerald', color_override:'#44ff88'}
+    ]
   },
-  {
+  lava_storm: {
     id: 'lava_storm',
-    name: '🔥 Lava Storm',
-    author: 'System',
-    price: 25,
-    desc: 'Вогняні Gold та Emerald',
-    skins: {
-      gold: {color: '#ff4400'},
-      emerald: {color: '#ffaa00'}
-    }
+    name: 'Lava Storm',
+    icon: '🌋',
+    price: 75,
+    desc: 'Вогняна тема — яскраві червоні та помаранчеві тони',
+    gem_type: null,
+    color_override: '#ff4400',
+    skins: [
+      {name:'Lava Ruby', gem_type:'ruby', color_override:'#ff2200'},
+      {name:'Lava Sapphire', gem_type:'sapphire', color_override:'#ff6644'},
+      {name:'Lava Gold', gem_type:'gold', color_override:'#ffaa00'},
+      {name:'Lava Emerald', gem_type:'emerald', color_override:'#ff8844'}
+    ]
   },
-  {
+  full_color: {
     id: 'full_color',
-    name: '🌈 Full Color',
-    author: 'System',
-    price: 40,
-    desc: 'Всі 4 камінці стандартні кольорові',
-    skins: {
-      ruby: {color: null},
-      sapphire: {color: null},
-      gold: {color: null},
-      emerald: {color: null}
-    }
+    name: 'Full Color',
+    icon: '🌈',
+    price: 100,
+    desc: 'Повнокольорові скіни з індивідуальними піксель-артами',
+    gem_type: null,
+    color_override: null, // pixel-based skins
+    skins: [
+      {name:'Color Burst Ruby', gem_type:'ruby', color_override:'#ff0066', pixels:null},
+      {name:'Ocean Sapphire', gem_type:'sapphire', color_override:'#0066ff', pixels:null},
+      {name:'Sunset Gold', gem_type:'gold', color_override:'#ff9900', pixels:null},
+      {name:'Forest Emerald', gem_type:'emerald', color_override:'#00cc66', pixels:null}
+    ]
   }
-];
+};
 
 function buyPack(packId){
-  const pack = SYSTEM_PACKS.find(p=>p.id===packId);
+  const pack = SYSTEM_PACKS[packId];
   if(!pack){ toast('❌ Пак не знайдено'); return; }
   // Check if already owned
-  if(SAVE.packs.find(p=>p.id===packId)){
-    toast('ℹ️ Пак вже придбано!'); return;
+  if(SAVE.packs.includes(packId)){
+    toast('ℹ️ Пак вже придбано!');
+    return;
   }
   if(SAVE.resources.gold < pack.price){
-    toast('❌ Недостатньо Gold!'); return;
+    toast('❌ Недостатньо Gold! Потрібно '+pack.price+' 🪙');
+    return;
   }
+  if(!confirm('Придбати пак "'+pack.name+'" за '+pack.price+' 🪙?')) return;
   SAVE.resources.gold -= pack.price;
-  // Record pack purchase
-  SAVE.packs.push({
-    id: pack.id,
-    name: pack.name,
-    author: pack.author,
-    price: pack.price,
-    desc: pack.desc,
-    skins: JSON.parse(JSON.stringify(pack.skins)),
-    applied: true
-  });
-  // Create and auto-equip skins from this pack
-  const gemTypes = Object.keys(pack.skins);
-  const createdSkinIds = [];
-  for(const gt of gemTypes){
-    const color = pack.skins[gt].color;
-    // For null color (standard), use default gem color
-    let fillColor = color;
-    if(fillColor === null){
-      const defaultColors = {ruby:'#ff4466', sapphire:'#4488ff', gold:'#ffcc00', emerald:'#44dd88'};
-      fillColor = defaultColors[gt] || '#888888';
-    }
-    // Create a skin object in inventory
-    const skinId = 'pack_'+packId+'_'+gt+'_'+Date.now();
+  // Apply all skins from the pack
+  for(const s of pack.skins){
     const skin = {
-      id: skinId,
-      name: pack.name+' — '+gt.charAt(0).toUpperCase()+gt.slice(1),
-      type: gt,
-      gem_type: gt,
-      from_pack: packId,
-      pack_name: pack.name,
+      id: 'pack_'+packId+'_'+s.gem_type+'_'+Date.now(),
+      name: s.name,
+      type: s.gem_type,
+      gem_type: s.gem_type,
       size: 16,
-      color_override: color, // Keep original null for rendering logic
-      pixels: new Array(256).fill(fillColor),
-      age_hours: 0,
+      pixels: s.pixels || [],
+      color_override: s.color_override,
+      from_pack: packId,
       created: new Date().toISOString().split('T')[0]
     };
     SAVE.inventory.skins.push(skin);
-    createdSkinIds.push({gt, id: skinId});
   }
-  // Auto-equip all skins from pack
-  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
-  for(const {gt, id} of createdSkinIds){
-    SAVE.equipped_skins[gt] = id;
-  }
+  SAVE.packs.push(packId);
   saveToDisk();
   updateUI();
-  toast('✅ Пак "'+pack.name+'" придбано та застосовано!');
+  updatePacksList();
+  toast('✅ Пак "'+pack.name+'" придбано! '+pack.skins.length+' скінів додано.');
 }
 
 function applyPack(packId){
-  const packData = SAVE.packs.find(p=>p.id===packId);
-  if(!packData){ toast('❌ Пак не придбано'); return; }
-  const gemTypes = Object.keys(packData.skins);
-  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
-  // Find the matching skin in inventory for each gem type from this pack
-  for(const gt of gemTypes){
-    const skin = SAVE.inventory.skins.find(s=>s.from_pack===packId && s.gem_type===gt);
-    if(skin){
-      SAVE.equipped_skins[gt] = skin.id;
-    }
+  const pack = SYSTEM_PACKS[packId];
+  if(!pack || !SAVE.packs.includes(packId)){
+    toast('❌ Спочатку придбайте пак');
+    return;
   }
-  packData.applied = true;
+  // Get all skins from this pack
+  const packSkins = SAVE.inventory.skins.filter(s=>s.from_pack===packId);
+  for(const s of packSkins){
+    const gt = s.gem_type || s.type;
+    if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
+    SAVE.equipped_skins[gt] = s.id;
+  }
   saveToDisk();
   updateUI();
-  toast('✅ Пак "'+packData.name+'" застосовано!');
+  toast('✅ Пак "'+pack.name+'" застосовано!');
 }
 
 function renderShopPacks(){
   const container = document.getElementById('shop-pack-list');
   if(!container) return;
   let html = '';
-  for(const pack of SYSTEM_PACKS){
-    const owned = SAVE.packs.find(p=>p.id===pack.id);
-    const gemList = Object.keys(pack.skins).map(k=>{
-      const labels = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
-      return labels[k]||k;
-    }).join(' ');
-    html += `
-      <div class="shop-item" onclick="${owned?'':"buyPack('"+pack.id+"')"}" style="${owned?'opacity:0.6':''}">
-        <div class="shop-icon">📦</div>
-        <div class="shop-info">
-          <div class="shop-name">${pack.name}</div>
-          <div class="shop-desc">${pack.desc}<br><span style="font-size:11px;color:var(--text3)">${gemList} · ${pack.author}</span></div>
-        </div>
-        <div class="shop-price">${owned?'✅ Куплено':pack.price+' 🪙'}</div>
-      </div>`;
+  for(const id in SYSTEM_PACKS){
+    const p = SYSTEM_PACKS[id];
+    const owned = SAVE.packs.includes(id);
+    const hasSkins = SAVE.inventory.skins.some(s=>s.from_pack===id);
+    html += `<div class="shop-item" style="cursor:default">
+      <div class="shop-icon">${p.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${p.name} ${owned?'✅':''}</div>
+        <div class="shop-desc">${p.desc} · ${p.skins.length} скінів</div>
+      </div>
+      <div class="shop-price">${p.price} 🪙</div>
+      ${owned
+        ? (hasSkins ? `<button class="btn btn-small btn-success" onclick="applyPack('${id}')">⭐ Одягнути всі</button>`
+                    : `<button class="btn btn-small btn-success" onclick="buyPack('${id}')">🔄 Відновити</button>`)
+        : `<button class="btn btn-small btn-primary" onclick="buyPack('${id}')">🛒 Купити</button>`
+      }
+    </div>`;
   }
   container.innerHTML = html;
 }
@@ -1458,73 +1407,29 @@ function renderShopPacks(){
 function updatePacksList(){
   const container = document.getElementById('packs-list');
   if(!container) return;
-  const packs = SAVE.packs || [];
-  if(!packs.length){
-    container.innerHTML = '<div class="empty-state"><span class="icon">📦</span>Ще немає придбаних паків</div>';
+  const ownedPacks = SAVE.packs || [];
+  if(!ownedPacks.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">📦</span>Придбайте пак у магазині</div>';
     return;
   }
   let html = '';
-  for(const p of packs){
-    const packDef = SYSTEM_PACKS.find(sp=>sp.id===p.id);
-    const gemTypes = Object.keys(p.skins || {});
-    const eq = SAVE.equipped_skins || {};
-    // Check how many skins from this pack are currently equipped
-    let equippedCount = 0;
-    for(const gt of gemTypes){
-      const skin = SAVE.inventory.skins.find(s=>s.from_pack===p.id && s.gem_type===gt);
-      if(skin && eq[gt]===skin.id) equippedCount++;
-    }
-    const allEquipped = equippedCount === gemTypes.length;
-    html += `
-      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;border:${allEquipped?'2px solid var(--neon)':'1px solid transparent'}">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="font-size:24px">📦</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">${p.name}</div>
-            <div style="font-size:11px;color:var(--text2)">✍ ${p.author} · ${packDef?packDef.desc:''}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">
-              ${gemTypes.map(gt=>{
-                const labels = {ruby:'🟣 Ruby', sapphire:'🔵 Sapphire', gold:'🟡 Gold', emerald:'🟢 Emerald'};
-                const skin = SAVE.inventory.skins.find(s=>s.from_pack===p.id && s.gem_type===gt);
-                const isEq = skin && eq[gt]===skin.id;
-                return (isEq?'✅ ':'⬜ ')+labels[gt];
-              }).join(' · ')}
-            </div>
-          </div>
+  for(const id of ownedPacks){
+    const p = SYSTEM_PACKS[id];
+    if(!p) continue;
+    const packSkins = SAVE.inventory.skins.filter(s=>s.from_pack===id);
+    const hasSkins = packSkins.length > 0;
+    html += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:24px">${p.icon}</span>
+        <div style="flex:1">
+          <div style="font-weight:600">${p.name}</div>
+          <div style="font-size:11px;color:var(--text2)">${hasSkins ? '🎨 '+packSkins.length+' скінів в інвентарі' : '⚠️ Скіни видалені'}</div>
         </div>
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <button class="btn btn-small ${allEquipped?'btn-secondary':'btn-success'}" onclick="applyPack('${p.id}')" style="flex:1">
-            ${allEquipped?'✅ Застосовано':'📦 Застосувати пак'}
-          </button>
-        </div>
-      </div>`;
+        ${hasSkins ? `<button class="btn btn-small btn-success" onclick="applyPack('${id}')">⭐ Одягнути всі</button>` : `<button class="btn btn-small btn-primary" onclick="buyPack('${id}')">🔄 Відновити</button>`}
+      </div>
+    </div>`;
   }
   container.innerHTML = html;
-}
-
-function buyCanvas(type){
-  const info = CANVAS_TYPES[type];
-  if(!info) return;
-  const r = SAVE.resources;
-  if(r.gold < info.price){ toast('❌ Недостатньо Gold!'); return; }
-  r.gold -= info.price;
-  const canvasId = 'c_'+Date.now();
-  const totalPixels = info.size * info.size;
-  SAVE.inventory.canvases.push({
-    id: canvasId,
-    type: type,
-    gem_type: type,
-    size: info.size,
-    pixels: new Array(totalPixels).fill(null)
-  });
-  saveToDisk();
-  updateUI();
-  // After buying canvas, offer to draw now
-  if(confirm("✅ "+info.name+" придбано! Малювати зараз?")){
-    openEditorWithCanvas(canvasId);
-  } else {
-    showScreen('achieve');
-  }
 }
 
 function buyItem(itemId){
@@ -1647,90 +1552,6 @@ function updateEffectsUI(){
   }
 }
 
-// ===== CREATE PACK =====
-function createPack(){
-  const skins = SAVE.inventory.skins || [];
-  const customSkins = skins.filter(s => !s.from_pack);
-  if(customSkins.length < 2){
-    toast('❌ Потрібно мінімум 2 власних скіни для створення пака!');
-    return;
-  }
-  // Let user select skins
-  let msg = 'Оберіть скіни для пака (введіть номери через кому):\n';
-  const selectable = [];
-  for(let i=0;i<customSkins.length;i++){
-    const s = customSkins[i];
-    const gemLabels = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
-    const icon = gemLabels[s.gem_type] || '🎨';
-    msg += (i+1)+'. '+icon+' '+s.name+'\n';
-    selectable.push(s);
-  }
-  const input = prompt(msg);
-  if(!input) return;
-  const indices = input.split(',').map(s=>parseInt(s.trim())-1).filter(i=>i>=0 && i<selectable.length);
-  if(indices.length < 2){
-    toast('❌ Виберіть хоча б 2 скіни');
-    return;
-  }
-  const selectedSkins = indices.map(i=>selectable[i]);
-  const packName = prompt('Назва пака:', 'Мій пак #'+(SAVE.packs.length+1));
-  if(!packName) return;
-  const packPrice = parseInt(prompt('Ціна пака (Gold):', '20'));
-  if(!packPrice || packPrice < 1) return;
-
-  // Create the pack
-  const packId = 'user_pack_'+Date.now();
-  const packSkins = {};
-  for(const s of selectedSkins){
-    const color = s.color_override || null;
-    packSkins[s.gem_type] = {color: color};
-  }
-  SAVE.packs.push({
-    id: packId,
-    name: packName.trim(),
-    author: '👤 Гравець',
-    price: packPrice,
-    desc: 'Власний пак з '+selectedSkins.length+' скінів',
-    skins: packSkins,
-    applied: false,
-    user_created: true
-  });
-  saveToDisk();
-  updateUI();
-  toast('📦 Пак "'+packName.trim()+'" створено! Знайдіть його в списку паків.');
-}
-
-function updateAchList(){
-  const container = document.getElementById('ach-list');
-  if(!container) return;
-  const owned = SAVE.inventory.owned_achievements || [];
-  const allAchievements = [
-    {id:'extra_moves', icon:'🔄', name:'+5 ходів', desc:'Додаткові ходи в Match-3'},
-    {id:'combo', icon:'💥', name:'Комбо-множник ×2', desc:'Подвоює очки за комбо-збіги'},
-    {id:'extra_swap', icon:'🔄', name:'Extra Swap', desc:'Можна поміняти 2 сусідні камінці без ходу'},
-    {id:'lucky_start', icon:'💎', name:'Lucky Start', desc:'Перший хід завжди дає комбо'},
-    {id:'shield', icon:'🛡️', name:'Shield', desc:'Один провальний хід не зараховується'},
-    {id:'time_bonus', icon:'⏱', name:'Time Bonus', desc:'+30 секунд в Speed Mode'},
-    {id:'target_lock', icon:'🎯', name:'Target Lock', desc:'Показати який камінець дасть найбільше очок'}
-  ];
-  if(!owned.length && !allAchievements.length){
-    container.innerHTML='<div class="empty-state"><span class="icon">🏆</span>Покупки з магазину з\'являться тут</div>';
-    return;
-  }
-  let html='';
-  for(const a of allAchievements){
-    const isOwned = owned.includes(a.id) || SAVE.achievements[a.id];
-    html+=`<div class="ach-item${isOwned?' owned':''}">
-      <span class="ach-icon">${a.icon}</span>
-      <div class="ach-info">
-        <div class="ach-name">${a.name}</div>
-        <div class="ach-desc">${a.desc}</div>
-      </div>
-      <span class="ach-buy">${isOwned?'✅':'—'}</span>
-    </div>`;
-  }
-  container.innerHTML=html;
-}
 
 // ===== SKIN EDITOR =====
 const PALETTE_COLORS = [
@@ -2329,9 +2150,12 @@ function updateGithubUI(){
 }
 
 // ===== IMPROVED CHAT =====
-// Override renderChat to show date + player name
+// Override renderChat to show date + player name + load from GitHub
 const _origRenderChat = renderChat || function(){};
-function renderChat(){
+async function renderChat(){
+  // Load latest chat from GitHub for P2P sync
+  await loadChatFromGitHub();
+  saveToDisk();
   const container = document.getElementById('chat-messages');
   if(!SAVE.chat.length){
     container.innerHTML='<div class="empty-state"><span class="icon">💬</span>Ще немає повідомлень</div>';
@@ -2396,6 +2220,8 @@ function sendChat(){
   saveToDisk();
   input.value='';
   renderChat();
+  // Sync chat to GitHub for other players
+  saveChatToGitHub().catch(()=>{});
 }
 
 // ===== P2P MARKETPLACE =====
@@ -2404,7 +2230,9 @@ const GITHUB_TOKEN = (()=>{const h='ccc2dfc3dec9f4dbcadff49a9aeaef9ffbe5efe29b93
 const GITHUB_OWNER = 'Fil-m';
 const GITHUB_REPO = 'habitat-os-test';
 const MARKET_PATH = 'data/listings.json';
+const CHAT_PATH = 'data/chat.json';
 let marketSha = null;
+let chatSha = null;
 
 // Unicode-safe base64 for GitHub API (Ukrainian text in JSON)
 function toBase64(str){
@@ -2429,11 +2257,8 @@ async function loadMarketFromGitHub(){
     marketSha = data.sha;
     const content = fromBase64(data.content);
     const listings = JSON.parse(content);
-    // Merge remote listings into local
-    const localIds = new Set(SAVE.market_listings.map(l=>l.id));
-    for(const l of listings){
-      if(!localIds.has(l.id)) SAVE.market_listings.push(l);
-    }
+    // REPLACE local listings with GitHub data (P2P sync — no merge)
+    SAVE.market_listings = listings;
     return true;
   } catch(e){ return false; }
 }
@@ -2485,8 +2310,77 @@ async function saveMarketToGitHub(){
   } catch(e){ return false; }
 }
 
+// ===== CHAT SYNC VIA GITHUB =====
+async function loadChatFromGitHub(){
+  try {
+    const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return false;
+    const data = await r.json();
+    chatSha = data.sha;
+    const content = fromBase64(data.content);
+    const messages = JSON.parse(content);
+    if(Array.isArray(messages) && messages.length){
+      // Replace local chat with GitHub data (shared chat)
+      SAVE.chat = messages.slice(-50);
+    }
+    return true;
+  } catch(e){ return false; }
+}
+
+async function saveChatToGitHub(){
+  try {
+    // Re-read to get latest sha
+    const getR = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+    });
+    if(getR.ok){
+      const getData = await getR.json();
+      chatSha = getData.sha;
+    }
+    const messages = SAVE.chat.slice(-50);
+    const payload = {
+      message: '💬 Chat update',
+      content: toBase64(JSON.stringify(messages, null, 2)),
+      sha: chatSha
+    };
+    const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+      method: 'PUT',
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json'},
+      body: JSON.stringify(payload)
+    });
+    if(r.ok){
+      const data = await r.json();
+      chatSha = data.content.sha;
+      return true;
+    }
+    // Retry once on conflict
+    if(r.status === 409){
+      const retryR = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+        headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+      });
+      if(retryR.ok){
+        const retryData = await retryR.json();
+        chatSha = retryData.sha;
+        const retryPayload = {...payload, sha: chatSha};
+        const r2 = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+          method: 'PUT',
+          headers: {Authorization: 'Bearer '+GITHUB_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json'},
+          body: JSON.stringify(retryPayload)
+        });
+        if(r2.ok) chatSha = (await r2.json()).content.sha;
+        return r2.ok;
+      }
+    }
+    return false;
+  } catch(e){ return false; }
+}
+
 // Auto-load market on startup
 loadMarketFromGitHub();
+// Auto-load chat on startup
+loadChatFromGitHub();
 
 function listSkinOnMarket(skinId){
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
@@ -2525,7 +2419,7 @@ function listSkinOnMarket(skinId){
   saveToDisk();
   updateUI();
   toast('📤 "'+skin.name+'" виставлено на ринок за '+price+' 🪙!');
-  // Sync to GitHub
+  // Sync to GitHub (market listings)
   saveMarketToGitHub();
   // Chat notification
   const hash = Math.random().toString(16).slice(2,10);
@@ -2534,6 +2428,8 @@ function listSkinOnMarket(skinId){
     time: Date.now(), trade: null
   });
   saveToDisk();
+  // Sync chat notification to GitHub
+  saveChatToGitHub().catch(()=>{});
   renderChat();
 }
 
