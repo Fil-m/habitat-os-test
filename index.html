@@ -1888,12 +1888,16 @@ function setupCanvasDrawing(){
     }else if(editorActiveLayer === 'frame' && editorFramePixelLifetimes){
       editorFramePixelLifetimes[idx] = editorPixelLifetime;
     }
-    if(isNewPixel) editorNewPixelsCount++;
-    // Cost applies to ALL painted pixels (new + repaint)
-    editorSessionCost += editorPixelCost;
-    editorDirty = true;
-    drawSkinCanvas();
-    updateEditorStats();
+    if(isNewPixel){
+      editorNewPixelsCount++;
+      editorDirty = true;
+      drawSkinCanvas();
+      updateEditorStats();
+    }else{
+      editorDirty = true;
+      drawSkinCanvas();
+      updateEditorStats();
+    }
   }
 
   function erase(idx){
@@ -2035,7 +2039,9 @@ function updateEditorStats(){
   const lifetimeLabel = PIXEL_LIFETIME_OPTIONS.find(o => o.ms === editorPixelLifetime)?.label || '24h';
   document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}`;
   document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
-  document.getElementById('editor-cost-stats').innerHTML = `🆕 ${editorNewPixelsCount} нових · 💰 ${editorSessionCost} px-год · ⌛ ${lifetimeLabel}`;
+  // Show estimated cost at save
+  const estCost = (gemUsed + bgUsed + frameUsed) * editorPixelCost;
+  document.getElementById('editor-cost-stats').innerHTML = `🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} px-год · ⌛ ${lifetimeLabel}`;
 }
 
 function clearSkinCanvas(){
@@ -2074,13 +2080,21 @@ function saveSkinFromEditor(){
     const existing = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
     if(!existing){ toast('❌ Скін не знайдено для редагування'); return; }
 
-    // Deduct pixel-hours for all painted pixels in this session
-    if(editorSessionCost > 0){
-      if(SAVE.resources.pixel_hours < editorSessionCost){
-        toast('❌ Недостатньо піксель-годин! Потрібно '+editorSessionCost+', є '+SAVE.resources.pixel_hours);
+    // Count NEW pixels (didn't exist before)
+    let newPixels = 0;
+    const oldPixels = existing.pixels || new Array(256).fill(null);
+    for(let i=0;i<256;i++){
+      const wasNull = !oldPixels[i];
+      const nowFilled = editorPixels[i] !== null;
+      if(wasNull && nowFilled) newPixels++;
+    }
+    const cost = newPixels * editorPixelCost;
+    if(cost > 0){
+      if(SAVE.resources.pixel_hours < cost){
+        toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.pixel_hours);
         return;
       }
-      SAVE.resources.pixel_hours -= editorSessionCost;
+      SAVE.resources.pixel_hours -= cost;
     }
 
     // Update existing skin
@@ -2096,8 +2110,8 @@ function saveSkinFromEditor(){
 
     saveToDisk();
     updateUI();
-    if(editorSessionCost > 0){
-      toast('💾 Скін "'+existing.name+'" оновлено! (-'+editorSessionCost+' px-год)');
+    if(cost > 0){
+      toast('💾 Скін "'+existing.name+'" оновлено! (-'+cost+' px-год)');
     }else{
       toast('💾 Скін "'+existing.name+'" оновлено!');
     }
@@ -2125,12 +2139,14 @@ function saveSkinFromEditor(){
   const skinName = prompt('Назва скіна:', label+' Skin #'+(SAVE.inventory.skins.length+1));
   if(!skinName) return;
 
-  // Count pixels to deduct pixel-hours
-  if(editorSessionCost > 0 && SAVE.resources.pixel_hours < editorSessionCost){
-    toast('❌ Недостатньо піксель-годин! Потрібно '+editorSessionCost+', є '+SAVE.resources.pixel_hours);
+  // Count all filled pixels and calculate cost
+  const filledCount = gemUsed + bgUsed + frameUsed;
+  const cost = filledCount * editorPixelCost;
+  if(cost > 0 && SAVE.resources.pixel_hours < cost){
+    toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.pixel_hours);
     return;
   }
-  SAVE.resources.pixel_hours -= editorSessionCost;
+  SAVE.resources.pixel_hours -= cost;
 
   // Consume the canvas
   SAVE.inventory.canvases.splice(canvasIdx, 1);
@@ -2157,7 +2173,7 @@ function saveSkinFromEditor(){
 
   saveToDisk();
   updateUI();
-  toast('💾 Скін "'+skin.name+'" збережено! (-'+editorSessionCost+' px-год)');
+  toast('💾 Скін "'+skin.name+'" збережено! (-'+cost+' px-год за '+filledCount+' пікселів)');
   closeEditorAndGoBack();
 }
 
