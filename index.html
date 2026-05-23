@@ -310,6 +310,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="resources" id="header-resources">
         <span class="resource">🪙<span class="val" id="hdr-gold">0</span></span>
         <span class="resource">💎<span class="val" id="hdr-ruby">0</span></span>
+        <span class="resource" style="font-size:10px">🎨<span class="val" id="hdr-pixels">0</span></span>
       </div>
     </div>
     <div class="hero-section">
@@ -969,8 +970,8 @@ function toast(msg){
 
 function updateUI(){
   const r = SAVE.resources;
-  const ids = ['hdr-gold','hdr-ruby','dash-gold','dash-ruby','dash-sapphire','dash-pixels','shop-gold'];
-  const vals = [r.gold, r.ruby, r.gold, r.ruby, r.sapphire, r.pixel_hours, r.gold];
+  const ids = ['hdr-gold','hdr-ruby','hdr-pixels','dash-gold','dash-ruby','dash-sapphire','dash-pixels','shop-gold'];
+  const vals = [r.gold, r.ruby, r.pixel_hours, r.gold, r.ruby, r.sapphire, r.pixel_hours, r.gold];
   for(let i=0;i<ids.length;i++){
     const el = document.getElementById(ids[i]);
     if(el) el.textContent = vals[i];
@@ -998,6 +999,7 @@ function updateUI(){
     eqEl.innerHTML = `🎨 <strong>Екіпіровані скіни:</strong><br><span style="font-size:12px">${parts.join(' · ')}</span>`;
   }
   updateSkinList();
+  updateAchieveList();
   updateAchieveCanvasList();
   updatePacksList();
   updateEffectsUI();
@@ -1031,6 +1033,8 @@ async function showScreen(id){
   if(id==='profile') updateProfile();
   if(id==='achieve') {
     // Make sure all sections are rendered when switching to achievements
+    updateAchieveList();
+    updateAchieveCanvasList();
     updatePacksList();
   }
   updateUI();
@@ -1537,23 +1541,23 @@ function buyItem(itemId){
     r.pixel_hours += 100;
     saveToDisk();
     updateUI();
-    toast('✅ +100 піксель-годин!');
+    toast('✅ +100 піксель-годин! 🎨 В редакторі обирайте вік пікселя і малюйте');
   }else if(itemId==='pixels_500'){
     if(r.gold < 35){ toast('❌ Недостатньо Gold!'); return; }
     r.gold -= 35;
     r.pixel_hours += 500;
     saveToDisk();
     updateUI();
-    toast('✅ +500 піксель-годин!');
+    toast('✅ +500 піксель-годин! 🎨 Тепер вистачить надовго');
   }
 }
 
 function buyAchievement(id){
   const prices = {extra_moves:15, combo:30, extra_swap:20, lucky_start:15, shield:25, time_bonus:20, target_lock:30};
   const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
+  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
   const price = prices[id];
   if(!price){ toast('❌ Невідома ачівка'); return; }
-  // Check both old and new storage
   if(SAVE.inventory.owned_achievements.includes(id) || SAVE.achievements[id]){
     toast('ℹ️ Вже придбано!');
     return;
@@ -1567,7 +1571,33 @@ function buyAchievement(id){
   SAVE.achievements[id] = true;
   saveToDisk();
   updateUI();
-  toast('✅ '+names[id]+' придбано!');
+  updateAchieveList();
+  toast('✅ '+names[id]+' придбано! 🏆 Зайдіть в Ачівки щоб побачити');
+}
+
+function updateAchieveList(){
+  const container = document.getElementById('ach-list');
+  if(!container) return;
+  const owned = SAVE.inventory.owned_achievements || [];
+  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
+  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
+  const descs = {extra_moves:'+5 ходів у Match-3', combo:'×2 бали за комбо', extra_swap:'Можна міняти не тільки сусідні', lucky_start:'Старт з 2 випадковими ходами', shield:'Один невдалий хід без втрати', time_bonus:'+30 сек в Speed Mode', target_lock:'Показати найкращий камінець'};
+  if(!owned.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">🏆</span>Купіть ачівки в магазині</div>';
+    return;
+  }
+  let html='';
+  for(const id of owned){
+    html+=`<div class="ach-item owned">
+      <span class="ach-icon">${icons[id]||'🏆'}</span>
+      <div class="ach-info">
+        <div class="ach-name">${names[id]||id}</div>
+        <div class="ach-desc">${descs[id]||''}</div>
+      </div>
+      <span class="ach-buy">✅</span>
+    </div>`;
+  }
+  container.innerHTML=html;
 }
 
 // ===== CANVAS SHOP =====
