@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Habitat OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d19;--bg2:#121526;--bg3:#1a1d33;--surface:#1e2240;--surface2:#262b50;
+  --neon:#00f0ff;--neon2:#ff00e5;--neon3:#ffcc00;--gold:#ffd700;--green:#00ff88;
+  --text:#e0e4f0;--text2:#8890b0;--text3:#505570;
+  --red:#ff3355;--blue:#3388ff;--ruby:#ff4466;--sapphire:#4488ff;--emerald:#44dd88;
+  --font:'Outfit',sans-serif;--mono:'Share Tech Mono',monospace;
+  --radius:12px;--radius-sm:8px;--shadow:0 4px 24px rgba(0,0,0,0.4);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
+
+/* Screens */
+.screen{display:none;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden;padding-bottom:68px;scroll-behavior:smooth}
+.screen.active{display:flex}
+.screen::-webkit-scrollbar{width:4px}
+.screen::-webkit-scrollbar-track{background:transparent}
+.screen::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
+
+/* Bottom Nav */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:60px;display:flex;background:var(--bg2);border-top:1px solid var(--surface);z-index:100;padding:0 4px}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--text2);font-size:10px;font-family:var(--font);cursor:pointer;transition:all .2s;padding:4px 2px;border-radius:var(--radius-sm)}
+.nav-btn .icon{font-size:20px;line-height:1}
+.nav-btn.active{color:var(--neon)}
+.nav-btn:active{transform:scale(0.92)}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--surface);flex-shrink:0}
+.header h1{font-size:18px;font-weight:700;color:var(--neon);letter-spacing:1px}
+.resources{display:flex;gap:10px;font-size:12px;font-family:var(--mono)}
+.resource{display:flex;align-items:center;gap:3px;color:var(--text2)}
+.resource .val{color:var(--text);font-weight:600}
+
+/* Cards */
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin:8px 16px;border:1px solid var(--surface2)}
+.card-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:var(--radius-sm);border:none;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn:active{transform:scale(0.95)}
+.btn-primary{background:linear-gradient(135deg,var(--neon),#0088ff);color:#000;box-shadow:0 0 20px rgba(0,240,255,0.2)}
+.btn-primary:hover{box-shadow:0 0 30px rgba(0,240,255,0.4)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--text3)}
+.btn-secondary:hover{border-color:var(--neon);color:var(--neon)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-success{background:var(--green);color:#000}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#ff9900);color:#000}
+.btn-small{padding:6px 12px;font-size:12px}
+.btn-block{width:100%;justify-content:center}
+.btn:disabled{opacity:0.4;pointer-events:none}
+
+/* Dashboard */
+.hero-section{padding:24px 16px 12px;text-align:center}
+.hero-section h2{font-size:28px;font-weight:700;color:#fff;margin-bottom:4px}
+.hero-section p{color:var(--text2);font-size:14px}
+.big-play{width:100%;max-width:280px;margin:16px auto;padding:18px 32px;font-size:20px;border-radius:16px;background:linear-gradient(135deg,var(--neon),var(--neon2));color:#000;border:none;cursor:pointer;font-weight:700;box-shadow:0 0 40px rgba(0,240,255,0.2);transition:all .3s;display:block;text-align:center}
+.big-play:active{transform:scale(0.95)}
+
+.resource-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.resource-card{background:var(--surface);border-radius:var(--radius);padding:12px;text-align:center;border:1px solid var(--surface2)}
+.resource-card .icon{font-size:28px;margin-bottom:4px}
+.resource-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px}
+.resource-card .value{font-size:22px;font-weight:700;font-family:var(--mono);margin-top:2px}
+
+.dash-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.dash-btn{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text)}
+.dash-btn .icon{font-size:32px;margin-bottom:6px;display:block}
+.dash-btn .label{font-size:13px;font-weight:600}
+.dash-btn:active{transform:scale(0.95);border-color:var(--neon)}
+.dash-btn.shop:active{border-color:var(--gold)}
+.dash-btn.skin:active{border-color:var(--neon2)}
+.dash-btn.chat:active{border-color:var(--green)}
+
+/* Match-3 */
+.m3-header{display:flex;justify-content:space-between;padding:10px 16px;background:var(--bg2);align-items:center;font-family:var(--mono);font-size:13px;flex-shrink:0}
+.m3-header .m3-stat{display:flex;align-items:center;gap:6px}
+.m3-header .m3-stat .num{color:var(--neon);font-weight:700}
+.m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0}
+.m3-board{display:grid;gap:2px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
+.m3-cell{width:40px;height:40px;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
+.m3-cell.bw{filter:grayscale(1);opacity:0.6}
+.m3-cell.bw.removed{opacity:0;transform:scale(0.5)}
+.m3-cell.selected{border:2px solid var(--neon);box-shadow:0 0 12px rgba(0,240,255,0.5);transform:scale(1.05);z-index:2}
+.m3-cell.removed{opacity:0;transform:scale(0.3);pointer-events:none}
+.m3-cell.falling{animation:fall 0.2s ease-in}
+@keyframes fall{from{transform:translateY(-46px);opacity:0.3}to{transform:translateY(0);opacity:1}}
+.m3-cell .gem{width:32px;height:32px;border-radius:50%;box-shadow:inset 0 -3px 6px rgba(0,0,0,0.3),inset 0 3px 6px rgba(255,255,255,0.15);transition:all .15s}
+.m3-cell .gem.g0{background:radial-gradient(circle at 35% 35%,#ff6688,#cc2244)}/* ruby */
+.m3-cell .gem.g1{background:radial-gradient(circle at 35% 35%,#66aaff,#2266cc)}/* sapphire */
+.m3-cell .gem.g2{background:radial-gradient(circle at 35% 35%,#ffee66,#ccaa22)}/* gold */
+.m3-cell .gem.g3{background:radial-gradient(circle at 35% 35%,#66ffaa,#22cc66)}/* emerald */
+.m3-cell.bw .gem.g0{background:#555!important;box-shadow:none!important}
+.m3-cell.bw .gem.g1{background:#666!important;box-shadow:none!important}
+.m3-cell.bw .gem.g2{background:#777!important;box-shadow:none!important}
+.m3-cell.bw .gem.g3{background:#888!important;box-shadow:none!important}
+
+/* Match-3 results */
+.m3-result{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,13,25,0.92);z-index:50;padding:24px;text-align:center}
+.m3-result.hidden{display:none}
+.m3-result h2{font-size:28px;margin-bottom:8px}
+.m3-result .m3-score{font-size:48px;font-weight:700;color:var(--gold);font-family:var(--mono);margin:8px 0}
+.m3-result .m3-rewards{margin:8px 0;font-size:14px;color:var(--text2)}
+.m3-result .btn{margin-top:12px}
+
+/* Shop */
+.shop-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:all .2s}
+.shop-item:active{transform:scale(0.98)}
+.shop-item .shop-icon{font-size:32px;flex-shrink:0;width:48px;text-align:center}
+.shop-item .shop-info{flex:1;min-width:0}
+.shop-item .shop-name{font-weight:600;font-size:14px}
+.shop-item .shop-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.shop-item .shop-price{font-weight:700;color:var(--gold);font-family:var(--mono);font-size:14px;white-space:nowrap}
+.shop-category{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px 16px;display:flex;align-items:center;gap:8px}
+.shop-category::after{content:'';flex:1;height:1px;background:var(--surface2)}
+
+/* Skin Editor */
+.editor-wrap{display:flex;flex-direction:column;align-items:center;padding:12px 16px;gap:12px}
+.editor-canvas-wrap{background:var(--bg3);padding:8px;border-radius:var(--radius);border:2px solid var(--surface2);touch-action:manipulation}
+.editor-canvas-wrap canvas{display:block;width:320px;height:320px;image-rendering:pixelated;image-rendering:crisp-edges;cursor:crosshair}
+.editor-palette{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-width:320px;width:100%}
+.editor-palette .p-color{width:100%;aspect-ratio:1;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all .15s}
+.editor-palette .p-color.active{border-color:var(--neon);transform:scale(1.1);box-shadow:0 0 12px rgba(0,240,255,0.4)}
+.editor-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.editor-stats{font-family:var(--mono);font-size:13px;color:var(--text2);text-align:center}
+
+/* Chat */
+.chat-messages{flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
+.chat-msg{background:var(--surface);border-radius:var(--radius-sm);padding:10px 12px;border:1px solid var(--surface2);font-size:13px;font-family:var(--mono)}
+.chat-msg .chat-hash{color:var(--text3);font-size:11px}
+.chat-msg .chat-author{color:var(--neon);font-weight:600}
+.chat-msg .chat-text{color:var(--text);margin-top:2px;word-break:break-word}
+.chat-input-wrap{display:flex;gap:8px;padding:8px 16px 12px;background:var(--bg2);border-top:1px solid var(--surface);flex-shrink:0}
+.chat-input-wrap input{flex:1;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--surface2);background:var(--surface);color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border .2s}
+.chat-input-wrap input:focus{border-color:var(--neon);box-shadow:0 0 12px rgba(0,240,255,0.15)}
+.chat-input-wrap input::placeholder{color:var(--text3)}
+.chat-input-wrap .btn{padding:10px 16px;flex-shrink:0}
+.chat-trade{background:var(--surface);border:1px solid var(--gold);border-radius:var(--radius-sm);padding:10px 12px;margin-top:4px;font-size:12px;font-family:var(--mono)}
+.chat-trade .trade-action{color:var(--gold);font-weight:700;cursor:pointer}
+.chat-trade .trade-action:hover{text-decoration:underline}
+
+/* Achievements */
+.ach-list{display:flex;flex-direction:column;gap:6px}
+.ach-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px}
+.ach-item.owned{border-left:3px solid var(--gold)}
+.ach-item .ach-icon{font-size:20px}
+.ach-item .ach-info{flex:1}
+.ach-item .ach-name{font-weight:600}
+.ach-item .ach-desc{font-size:11px;color:var(--text2)}
+.ach-item .ach-buy{font-size:12px;color:var(--gold);font-weight:700;cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:4px;background:var(--surface);transition:all .2s}
+.ach-item .ach-buy:active{background:var(--surface2);transform:scale(0.95)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:32px 16px;color:var(--text2);font-size:14px}
+.empty-state .icon{font-size:48px;margin-bottom:8px;display:block;opacity:0.5}
+
+/* Responsive */
+@media(min-width:480px){
+  .m3-cell{width:48px;height:48px}
+  .m3-cell .gem{width:38px;height:38px}
+  .editor-canvas-wrap canvas{width:384px;height:384px}
+}
+@media(max-width:374px){
+  .m3-cell{width:34px;height:34px}
+  .m3-cell .gem{width:26px;height:26px}
+  .editor-canvas-wrap canvas{width:256px;height:256px}
+  .resource-grid{grid-template-columns:1fr}
+}
+
+/* Toast */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);max-width:360px;width:90%;background:var(--surface);border:1px solid var(--neon);border-radius:var(--radius);padding:12px 16px;font-size:13px;text-align:center;z-index:999;box-shadow:var(--shadow);animation:toastIn 0.3s ease;pointer-events:none}
+.toast.hidden{display:none}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Dashboard Screen -->
+  <div id="screen-dashboard" class="screen active">
+    <div class="header">
+      <h1>⬡ HABITAT OS</h1>
+      <div class="resources" id="header-resources">
+        <span class="resource">🪙<span class="val" id="hdr-gold">0</span></span>
+        <span class="resource">💎<span class="val" id="hdr-ruby">0</span></span>
+      </div>
+    </div>
+    <div class="hero-section">
+      <h2>⬡ HABITAT OS</h2>
+      <p>Твоя піксельна пригода починається тут</p>
+      <button class="big-play" onclick="showScreen('match3')">🎮 ГРАТИ</button>
+    </div>
+    <div class="resource-grid">
+      <div class="resource-card">
+        <div class="icon">🪙</div>
+        <div class="label">Gold</div>
+        <div class="value" id="dash-gold">0</div>
+      </div>
+      <div class="resource-card">
+        <div class="icon">💎</div>
+        <div class="label">Ruby</div>
+        <div class="value" id="dash-ruby">0</div>
+      </div>
+      <div class="resource-card">
+        <div class="icon">🌀</div>
+        <div class="label">Sapphire</div>
+        <div class="value" id="dash-sapphire">0</div>
+      </div>
+      <div class="resource-card">
+        <div class="icon">🎨</div>
+        <div class="label">Pixel hours</div>
+        <div class="value" id="dash-pixels">0</div>
+      </div>
+    </div>
+    <div class="dash-buttons">
+      <button class="dash-btn shop" onclick="showScreen('shop')">
+        <span class="icon">🏪</span>
+        <span class="label">Магазин</span>
+      </button>
+      <button class="dash-btn skin" onclick="showScreen('skineditor')">
+        <span class="icon">🎨</span>
+        <span class="label">Редактор</span>
+      </button>
+      <button class="dash-btn chat" onclick="showScreen('chat')">
+        <span class="icon">💬</span>
+        <span class="label">Чат</span>
+      </button>
+      <button class="dash-btn" onclick="showScreen('achieve')">
+        <span class="icon">🏆</span>
+        <span class="label">Ачівки</span>
+      </button>
+    </div>
+    <div style="flex:1;min-height:40px"></div>
+  </div>
+
+  <!-- Match-3 Screen -->
+  <div id="screen-match3" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">☰ MATCH-3</h1>
+      <div style="width:60px"></div>
+    </div>
+    <div class="m3-header">
+      <span class="m3-stat">🎯 <span class="num" id="m3-score">0</span></span>
+      <span class="m3-stat">🔄 <span class="num" id="m3-moves">30</span></span>
+      <span class="m3-stat">🏆 <span class="num" id="m3-highscore">0</span></span>
+    </div>
+    <div class="m3-board-wrap" id="m3-board-wrap">
+      <div class="m3-board" id="m3-board" style="grid-template-columns:repeat(8,40px)"></div>
+    </div>
+    <div class="m3-result hidden" id="m3-result">
+      <h2>⏱ Час вийшов!</h2>
+      <div class="m3-score" id="m3-final-score">0</div>
+      <div class="m3-rewards" id="m3-rewards">🪙 +0 Gold &nbsp; 💎 +0 Ruby</div>
+      <button class="btn btn-primary" onclick="startMatch3()">🔄 Ще раз</button>
+      <button class="btn btn-secondary" onclick="showScreen('dashboard')" style="margin-top:8px">← На головну</button>
+    </div>
+  </div>
+
+  <!-- Shop Screen -->
+  <div id="screen-shop" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">🏪 МАГАЗИН</h1>
+      <div class="resources">
+        <span class="resource">🪙<span class="val" id="shop-gold">0</span></span>
+      </div>
+    </div>
+    <div class="shop-category">🎨 Холсти</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" onclick="buyItem('canvas_hero')">
+        <div class="shop-icon">🖼</div>
+        <div class="shop-info">
+          <div class="shop-name">Hero Canvas 16×16</div>
+          <div class="shop-desc">Базовий холст для створення скіну</div>
+        </div>
+        <div class="shop-price" id="shop-price-canvas_hero">30 🪙</div>
+      </div>
+    </div>
+    <div class="shop-category">⏱ Піксель-години</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" onclick="buyItem('pixels_100')">
+        <div class="shop-icon">🎨</div>
+        <div class="shop-info">
+          <div class="shop-name">100 пікселів</div>
+          <div class="shop-desc">+100 до ліміту пікселів для редактора</div>
+        </div>
+        <div class="shop-price" id="shop-price-pixels_100">8 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('pixels_500')">
+        <div class="shop-icon">🎨🎨</div>
+        <div class="shop-info">
+          <div class="shop-name">500 пікселів</div>
+          <div class="shop-desc">+500 до ліміту пікселів (вигідно!)</div>
+        </div>
+        <div class="shop-price" id="shop-price-pixels_500">35 🪙</div>
+      </div>
+    </div>
+    <div class="shop-category">⚡ Покращення Match-3</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" onclick="buyAchievement('extra_moves')">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">+5 ходів</div>
+          <div class="shop-desc">Додаткові ходи в кожній грі</div>
+        </div>
+        <div class="shop-price" id="ach-price-extra_moves">15 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyAchievement('combo')">
+        <div class="shop-icon">💥</div>
+        <div class="shop-info">
+          <div class="shop-name">Комбо-множник ×2</div>
+          <div class="shop-desc">Подвоює очки за комбо-збіги</div>
+        </div>
+        <div class="shop-price" id="ach-price-combo">30 🪙</div>
+      </div>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
+  </div>
+
+  <!-- Achievements Screen -->
+  <div id="screen-achieve" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">🏆 АЧІВКИ</h1>
+    </div>
+    <div class="card">
+      <div class="card-title">Мої покращення</div>
+      <div class="ach-list" id="ach-list">
+        <div class="empty-state">
+          <span class="icon">🏆</span>
+          Покупки в магазині з'являться тут
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Статистика</div>
+      <div style="font-family:var(--mono);font-size:14px;display:grid;gap:8px">
+        <div>🎮 Зіграно матчів: <strong id="stat-matches">0</strong></div>
+        <div>🪙 Всього зароблено: <strong id="stat-earned">0</strong></div>
+        <div>🏆 Рекорд: <strong id="stat-record">0</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🖼 Мої скіни</div>
+      <div id="skin-list">
+        <div class="empty-state">
+          <span class="icon">🎨</span>
+          Створіть скін у редакторі
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skin Editor Screen -->
+  <div id="screen-skineditor" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">🎨 РЕДАКТОР</h1>
+      <div class="resources">
+        <span class="resource">🎨<span class="val" id="editor-pixels-left">0</span></span>
+      </div>
+    </div>
+    <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / <span id="editor-pixel-max">256</span></div>
+    <div class="editor-wrap">
+      <div class="editor-canvas-wrap">
+        <canvas id="skin-canvas" width="16" height="16"></canvas>
+      </div>
+      <div class="editor-palette" id="editor-palette"></div>
+      <div class="editor-tools">
+        <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
+        <button class="btn btn-secondary btn-small" onclick="saveSkinDraft()">💾 Чернетка</button>
+        <button class="btn btn-success btn-small" onclick="equipSkin()">⭐ Екіпірувати</button>
+        <button class="btn btn-danger btn-small" onclick="sellSkin()">💰 Продати</button>
+      </div>
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-top:4px">
+        Оберіть колір → клікніть на піксель
+      </div>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
+  </div>
+
+  <!-- Chat Screen -->
+  <div id="screen-chat" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">💬 ЧАТ</h1>
+      <button class="btn btn-small btn-secondary" onclick="clearChat()" style="font-size:10px">🗑</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="empty-state">
+        <span class="icon">💬</span>
+        Ще немає повідомлень
+      </div>
+    </div>
+    <div class="chat-input-wrap">
+      <input type="text" id="chat-input" placeholder="Ваше повідомлення..." maxlength="200" onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="btn btn-primary btn-small" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="nav">
+    <button class="nav-btn active" data-screen="dashboard" onclick="showScreen('dashboard')">
+      <span class="icon">⬡</span> Головна
+    </button>
+    <button class="nav-btn" data-screen="match3" onclick="showScreen('match3')">
+      <span class="icon">🎮</span> Гра
+    </button>
+    <button class="nav-btn" data-screen="shop" onclick="showScreen('shop')">
+      <span class="icon">🏪</span> Магазин
+    </button>
+    <button class="nav-btn" data-screen="skineditor" onclick="showScreen('skineditor')">
+      <span class="icon">🎨</span> Скіни
+    </button>
+    <button class="nav-btn" data-screen="chat" onclick="showScreen('chat')">
+      <span class="icon">💬</span> Чат
+    </button>
+  </nav>
+</div>
+
+<script>
+// ===== SAVE SYSTEM =====
+const DEFAULT_SAVE = {
+  resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
+  inventory: {canvases:[], skins:[], owned_achievements:[]},
+  equipped_skin: null,
+  stats: {matches:0, earned:0, record:0},
+  chat: [],
+  match3_state: {daily_matches:0}
+};
+
+function loadSave(){
+  try{
+    const raw = localStorage.getItem('habitat_os_save');
+    if(raw){
+      const data = JSON.parse(raw);
+      // Merge with defaults for any missing keys
+      for(const k in DEFAULT_SAVE){
+        if(!(k in data)) data[k] = JSON.parse(JSON.stringify(DEFAULT_SAVE[k]));
+      }
+      if(typeof data.resources !== 'object') data.resources = {...DEFAULT_SAVE.resources};
+      for(const k in DEFAULT_SAVE.resources){
+        if(!(k in data.resources)) data.resources[k] = DEFAULT_SAVE.resources[k];
+      }
+      if(typeof data.inventory !== 'object') data.inventory = {...DEFAULT_SAVE.inventory};
+      if(!Array.isArray(data.inventory.canvases)) data.inventory.canvases = [];
+      if(!Array.isArray(data.inventory.skins)) data.inventory.skins = [];
+      if(!Array.isArray(data.inventory.owned_achievements)) data.inventory.owned_achievements = [];
+      if(typeof data.stats !== 'object') data.stats = {...DEFAULT_SAVE.stats};
+      for(const k in DEFAULT_SAVE.stats){
+        if(!(k in data.stats)) data.stats[k] = DEFAULT_SAVE.stats[k];
+      }
+      if(!Array.isArray(data.chat)) data.chat = [];
+      if(typeof data.match3_state !== 'object') data.match3_state = {...DEFAULT_SAVE.match3_state};
+      if(typeof data.match3_state.daily_matches !== 'number') data.match3_state.daily_matches = 0;
+      return data;
+    }
+  }catch(e){console.error('Save load error',e);}
+  return JSON.parse(JSON.stringify(DEFAULT_SAVE));
+}
+
+let SAVE = loadSave();
+
+function saveToDisk(){
+  try{
+    localStorage.setItem('habitat_os_save', JSON.stringify(SAVE));
+  }catch(e){console.error('Save error',e);}
+}
+
+// ===== HELPER FUNCTIONS =====
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(()=>el.classList.add('hidden'), 2500);
+}
+
+function updateUI(){
+  const r = SAVE.resources;
+  const ids = ['hdr-gold','hdr-ruby','dash-gold','dash-ruby','dash-sapphire','dash-pixels','shop-gold'];
+  const vals = [r.gold, r.ruby, r.gold, r.ruby, r.sapphire, r.pixel_hours, r.gold];
+  for(let i=0;i<ids.length;i++){
+    const el = document.getElementById(ids[i]);
+    if(el) el.textContent = vals[i];
+  }
+  if(document.getElementById('stat-matches')){
+    document.getElementById('stat-matches').textContent = SAVE.stats.matches;
+    document.getElementById('stat-earned').textContent = SAVE.stats.earned;
+    document.getElementById('stat-record').textContent = SAVE.stats.record;
+  }
+  updateAchList();
+  updateSkinList();
+}
+
+// ===== SCREEN NAV =====
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const screen = document.getElementById('screen-'+id);
+  if(screen) screen.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.screen===id);
+  });
+  if(id==='match3' && !window._m3Started) startMatch3();
+  if(id==='skineditor') initEditor();
+  if(id==='chat') renderChat();
+  updateUI();
+}
+
+// ===== MATCH-3 GAME =====
+const GEM_TYPES = 4;
+const BOARD_SIZE = 8;
+let board = [];
+let selectedCell = null;
+let score = 0;
+let movesLeft = 30;
+let isAnimating = false;
+let gameOver = false;
+
+function getMaxMoves(){
+  return 30 + (SAVE.inventory.owned_achievements.includes('extra_moves')?5:0);
+}
+
+function getComboMultiplier(){
+  return SAVE.inventory.owned_achievements.includes('combo')?2:1;
+}
+
+function isBwMode(){
+  return !SAVE.equipped_skin;
+}
+
+function startMatch3(){
+  window._m3Started = true;
+  gameOver = false;
+  isAnimating = false;
+  selectedCell = null;
+  movesLeft = getMaxMoves();
+  score = 0;
+  board = [];
+  for(let r=0;r<BOARD_SIZE;r++){
+    board[r]=[];
+    for(let c=0;c<BOARD_SIZE;c++){
+      board[r][c]=Math.floor(Math.random()*GEM_TYPES);
+    }
+  }
+  // Remove initial matches
+  while(true){
+    const matches = findAllMatches();
+    if(!matches.length) break;
+    for(const [r,c] of matches) board[r][c]=Math.floor(Math.random()*GEM_TYPES);
+  }
+  document.getElementById('m3-result').classList.add('hidden');
+  renderBoard();
+  updateM3UI();
+}
+
+function renderBoard(){
+  const container = document.getElementById('m3-board');
+  container.innerHTML='';
+  const bw = isBwMode();
+  const style = calcGridSize();
+  container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      const cell = document.createElement('div');
+      cell.className='m3-cell';
+      if(bw) cell.classList.add('bw');
+      cell.dataset.r=r;
+      cell.dataset.c=c;
+      const gem = document.createElement('div');
+      gem.className='gem g'+board[r][c];
+      cell.appendChild(gem);
+      cell.addEventListener('click',()=>onCellClick(r,c));
+      cell.addEventListener('touchstart',(e)=>{
+        e.preventDefault();
+        onCellClick(r,c);
+      },{passive:false});
+      if(selectedCell && selectedCell[0]===r && selectedCell[1]===c) cell.classList.add('selected');
+      container.appendChild(cell);
+    }
+  }
+}
+
+function calcGridSize(){
+  const wrap = document.getElementById('m3-board-wrap');
+  const w = wrap.clientWidth-24;
+  const h = wrap.clientHeight-24;
+  const maxSize = Math.min(Math.floor(w/BOARD_SIZE), Math.floor(h/BOARD_SIZE), 52);
+  return Math.max(28, Math.min(maxSize, 52));
+}
+
+function updateM3UI(){
+  document.getElementById('m3-score').textContent=score;
+  document.getElementById('m3-moves').textContent=movesLeft;
+  document.getElementById('m3-highscore').textContent=SAVE.stats.record;
+}
+
+function onCellClick(r,c){
+  if(gameOver || isAnimating) return;
+  if(!selectedCell){
+    selectedCell=[r,c];
+    renderBoard();
+    return;
+  }
+  const [sr,sc]=selectedCell;
+  if(sr===r && sc===c){
+    selectedCell=null;
+    renderBoard();
+    return;
+  }
+  // Check adjacency
+  const dr = Math.abs(sr-r);
+  const dc = Math.abs(sc-c);
+  if((dr===1 && dc===0) || (dr===0 && dc===1)){
+    // Swap
+    selectedCell=null;
+    trySwap(sr,sc,r,c);
+  }else{
+    selectedCell=[r,c];
+    renderBoard();
+  }
+}
+
+function trySwap(r1,c1,r2,c2){
+  isAnimating=true;
+  // Swap
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+  renderBoard();
+
+  const matches = findAllMatches();
+  if(matches.length){
+    movesLeft--;
+    processMatches(matches, 1);
+  }else{
+    // Swap back
+    [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+    renderBoard();
+    toast('❌ Немає збігу!');
+    isAnimating=false;
+  }
+}
+
+function findAllMatches(){
+  const matched = new Set();
+  // Horizontal
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<=BOARD_SIZE-3;c++){
+      if(board[r][c]===board[r][c+1] && board[r][c]===board[r][c+2]){
+        matched.add(r+','+c);
+        matched.add(r+','+(c+1));
+        matched.add(r+','+(c+2));
+      }
+    }
+  }
+  // Vertical
+  for(let c=0;c<BOARD_SIZE;c++){
+    for(let r=0;r<=BOARD_SIZE-3;r++){
+      if(board[r][c]===board[r+1][c] && board[r][c]===board[r+2][c]){
+        matched.add(r+','+c);
+        matched.add((r+1)+','+c);
+        matched.add((r+2)+','+c);
+      }
+    }
+  }
+  return [...matched].map(s=>s.split(',').map(Number));
+}
+
+function processMatches(matches, comboLevel){
+  // Calculate score
+  const multi = getComboMultiplier();
+  let points = matches.length * 10 * comboLevel * multi;
+  score += points;
+
+  // Remove matched gems
+  for(const [r,c] of matches){
+    board[r][c] = -1; // Mark as removed
+  }
+
+  // Visual feedback
+  renderBoard();
+  // Mark removed
+  document.querySelectorAll('.m3-cell').forEach(cell=>{
+    const r = parseInt(cell.dataset.r);
+    const c = parseInt(cell.dataset.c);
+    if(board[r][c]===-1) cell.classList.add('removed');
+  });
+
+  // Gravity
+  setTimeout(()=>{
+    applyGravity();
+    renderBoard();
+    // Check for chain matches
+    setTimeout(()=>{
+      const newMatches = findAllMatches();
+      if(newMatches.length){
+        processMatches(newMatches, comboLevel+1);
+      }else{
+        isAnimating=false;
+        updateM3UI();
+        checkGameOver();
+      }
+    },150);
+  },150);
+}
+
+function applyGravity(){
+  for(let c=0;c<BOARD_SIZE;c++){
+    const col = [];
+    for(let r=0;r<BOARD_SIZE;r++){
+      if(board[r][c]!==-1) col.push(board[r][c]);
+    }
+    // Fill from top with random
+    while(col.length<BOARD_SIZE){
+      col.unshift(Math.floor(Math.random()*GEM_TYPES));
+    }
+    for(let r=0;r<BOARD_SIZE;r++){
+      board[r][c] = col[r];
+    }
+  }
+}
+
+function checkGameOver(){
+  if(movesLeft<=0){
+    gameOver=true;
+    endMatch3();
+  }
+  updateM3UI();
+}
+
+function endMatch3(){
+  // Rewards
+  const goldEarned = Math.floor(score / 10);
+  let rubyEarned = 0;
+  if(Math.random() < 0.01) rubyEarned = 1;
+
+  SAVE.resources.gold += goldEarned;
+  SAVE.resources.ruby += rubyEarned;
+  SAVE.stats.matches++;
+  SAVE.stats.earned += goldEarned;
+  if(score > SAVE.stats.record) SAVE.stats.record = score;
+  saveToDisk();
+  updateUI();
+
+  // Show result
+  document.getElementById('m3-final-score').textContent = score;
+  document.getElementById('m3-rewards').innerHTML = `🪙 +${goldEarned} Gold &nbsp; 💎 +${rubyEarned>0?'1 Ruby':'0 Ruby'}`;
+  document.getElementById('m3-result').classList.remove('hidden');
+}
+
+// ===== SHOP =====
+function buyItem(itemId){
+  const r = SAVE.resources;
+  if(itemId==='canvas_hero'){
+    if(r.gold < 30){ toast('❌ Недостатньо Gold!'); return; }
+    r.gold -= 30;
+    SAVE.inventory.canvases.push({type:'hero', bought:Date.now()});
+    saveToDisk();
+    updateUI();
+    toast('✅ Hero Canvas придбано!');
+  }else if(itemId==='pixels_100'){
+    if(r.gold < 8){ toast('❌ Недостатньо Gold!'); return; }
+    r.gold -= 8;
+    r.pixel_hours += 100;
+    saveToDisk();
+    updateUI();
+    toast('✅ +100 піксель-годин!');
+  }else if(itemId==='pixels_500'){
+    if(r.gold < 35){ toast('❌ Недостатньо Gold!'); return; }
+    r.gold -= 35;
+    r.pixel_hours += 500;
+    saveToDisk();
+    updateUI();
+    toast('✅ +500 піксель-годин!');
+  }
+}
+
+function buyAchievement(id){
+  const prices = {extra_moves:15, combo:30};
+  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2'};
+  const price = prices[id];
+  if(SAVE.inventory.owned_achievements.includes(id)){
+    toast('ℹ️ Вже придбано!');
+    return;
+  }
+  if(SAVE.resources.gold < price){
+    toast('❌ Недостатньо Gold!');
+    return;
+  }
+  SAVE.resources.gold -= price;
+  SAVE.inventory.owned_achievements.push(id);
+  saveToDisk();
+  updateUI();
+  toast('✅ '+names[id]+' придбано!');
+}
+
+function updateAchList(){
+  const container = document.getElementById('ach-list');
+  if(!container) return;
+  const owned = SAVE.inventory.owned_achievements || [];
+  const allAchievements = [
+    {id:'extra_moves', icon:'🔄', name:'+5 ходів', desc:'Додаткові ходи в Match-3'},
+    {id:'combo', icon:'💥', name:'Комбо-множник ×2', desc:'Подвоює очки за комбо-збіги'}
+  ];
+  if(!owned.length && !allAchievements.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">🏆</span>Покупки з магазину з\'являться тут</div>';
+    return;
+  }
+  let html='';
+  for(const a of allAchievements){
+    const isOwned = owned.includes(a.id);
+    html+=`<div class="ach-item${isOwned?' owned':''}">
+      <span class="ach-icon">${a.icon}</span>
+      <div class="ach-info">
+        <div class="ach-name">${a.name}</div>
+        <div class="ach-desc">${a.desc}</div>
+      </div>
+      <span class="ach-buy">${isOwned?'✅':'—'}</span>
+    </div>`;
+  }
+  container.innerHTML=html;
+}
+
+function updateSkinList(){
+  const container = document.getElementById('skin-list');
+  if(!container) return;
+  const skins = SAVE.inventory.skins || [];
+  if(!skins.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">🎨</span>Створіть скін у редакторі</div>';
+    return;
+  }
+  let html='<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">';
+  for(let i=0;i<skins.length;i++){
+    const s = skins[i];
+    const isEquipped = SAVE.equipped_skin && SAVE.equipped_skin.id===s.id;
+    html+=`<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:8px;text-align:center;border:${isEquipped?'2px solid var(--neon)':'2px solid transparent'}">
+      <canvas id="mini-skin-${i}" width="16" height="16" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;display:block;margin:0 auto;background:#1a1d33;border-radius:4px"></canvas>
+      <div style="font-size:11px;margin-top:4px;color:var(--text2)">${isEquipped?'⭐ Екіпіровано':'Скін #'+(i+1)}</div>
+    </div>`;
+  }
+  html+='</div>';
+  container.innerHTML=html;
+  // Render mini skins
+  setTimeout(()=>{
+    for(let i=0;i<skins.length;i++){
+      const canvas = document.getElementById('mini-skin-'+i);
+      if(canvas){
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(16,16);
+        const pixels = skins[i].pixels;
+        for(let p=0;p<256;p++){
+          const color = pixels && pixels[p] ? pixels[p] : '#1a1d33';
+          const [r,g,b] = hexToRgb(color);
+          imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+        }
+        ctx.putImageData(imageData,0,0);
+      }
+    }
+  },50);
+}
+
+// ===== SKIN EDITOR =====
+const PALETTE_COLORS = [
+  '#ff4466','#ff8844','#ffcc44','#44dd88','#44aaff','#8844ff',
+  '#ffffff','#cccccc','#888888','#444444','#1a1d33','#0b0d19'
+];
+let editorColor = '#ff4466';
+let editorPixels = new Array(256).fill(null);
+let editorDirty = false;
+let editorInitialized = false;
+
+function initEditor(){
+  if(editorInitialized) return;
+  editorInitialized = true;
+  buildPalette();
+  const canvas = document.getElementById('skin-canvas');
+  if(!canvas) return;
+  // Load existing skin if any
+  const equipped = SAVE.equipped_skin;
+  if(equipped && equipped.pixels){
+    for(let i=0;i<256;i++){
+      editorPixels[i] = equipped.pixels[i] || null;
+    }
+  }
+  drawSkinCanvas();
+  setupCanvasDrawing();
+  updateEditorStats();
+}
+
+function buildPalette(){
+  const container = document.getElementById('editor-palette');
+  container.innerHTML='';
+  for(const color of PALETTE_COLORS){
+    const div = document.createElement('div');
+    div.className='p-color';
+    if(color===editorColor) div.classList.add('active');
+    div.style.background=color;
+    div.style.borderColor=color==='#ffffff'?'#888':color;
+    div.addEventListener('click',()=>{
+      editorColor=color;
+      document.querySelectorAll('.p-color').forEach(d=>d.classList.remove('active'));
+      div.classList.add('active');
+    });
+    container.appendChild(div);
+  }
+}
+
+function setupCanvasDrawing(){
+  const canvas = document.getElementById('skin-canvas');
+  const size = 16;
+  let painting = false;
+
+  function getPixel(e){
+    const rect = canvas.getBoundingClientRect();
+    const scale = rect.width / size;
+    let x,y;
+    if(e.touches){
+      x = Math.floor((e.touches[0].clientX - rect.left) / scale);
+      y = Math.floor((e.touches[0].clientY - rect.top) / scale);
+    }else{
+      x = Math.floor((e.clientX - rect.left) / scale);
+      y = Math.floor((e.clientY - rect.top) / scale);
+    }
+    if(x<0||x>=size||y<0||y>=size) return null;
+    return y*size + x;
+  }
+
+  function paint(idx){
+    if(idx===null) return;
+    const maxPixels = Math.min(256, SAVE.resources.pixel_hours);
+    const used = editorPixels.filter(p=>p!==null).length;
+    if(editorPixels[idx]===null && used>=maxPixels){
+      toast('❌ Недостатньо піксель-годин!');
+      return;
+    }
+    editorPixels[idx] = editorColor;
+    editorDirty = true;
+    drawSkinCanvas();
+    updateEditorStats();
+  }
+
+  function erase(idx){
+    if(idx===null) return;
+    if(editorPixels[idx]!==null){
+      SAVE.resources.pixel_hours++;
+      editorPixels[idx]=null;
+      editorDirty=true;
+      drawSkinCanvas();
+      updateEditorStats();
+      saveToDisk();
+    }
+  }
+
+  canvas.addEventListener('mousedown',(e)=>{painting=true; paint(getPixel(e));});
+  canvas.addEventListener('mousemove',(e)=>{if(painting) paint(getPixel(e));});
+  canvas.addEventListener('mouseup',()=>{painting=false;});
+  canvas.addEventListener('mouseleave',()=>{painting=false;});
+  canvas.addEventListener('touchstart',(e)=>{e.preventDefault();painting=true; paint(getPixel(e));},{passive:false});
+  canvas.addEventListener('touchmove',(e)=>{e.preventDefault();if(painting) paint(getPixel(e));},{passive:false});
+  canvas.addEventListener('touchend',()=>{painting=false;});
+
+  // Right click to erase
+  canvas.addEventListener('contextmenu',(e)=>{
+    e.preventDefault();
+    const idx = getPixel(e);
+    erase(idx);
+  });
+}
+
+function drawSkinCanvas(){
+  const canvas = document.getElementById('skin-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = 16;
+  const imageData = ctx.createImageData(size,size);
+  for(let i=0;i<256;i++){
+    const color = editorPixels[i];
+    let r,g,b;
+    if(color){
+      [r,g,b] = hexToRgb(color);
+    }else{
+      r=26;g=29;b=51; // bg3 color
+    }
+    imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
+  }
+  ctx.putImageData(imageData,0,0);
+
+  // Draw grid
+  ctx.strokeStyle='rgba(255,255,255,0.08)';
+  ctx.lineWidth=1;
+  for(let i=0;i<=size;i++){
+    ctx.beginPath();
+    ctx.moveTo(i,0);ctx.lineTo(i,size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0,i);ctx.lineTo(size,i);
+    ctx.stroke();
+  }
+}
+
+function updateEditorStats(){
+  const used = editorPixels.filter(p=>p!==null).length;
+  const maxP = Math.min(256, SAVE.resources.pixel_hours);
+  document.getElementById('editor-stats').innerHTML = `Пікселів використано: ${used} / <span id="editor-pixel-max">${maxP}</span>`;
+  document.getElementById('editor-pixels-left').textContent = maxP - used;
+  // Re-set the span content
+  const span = document.getElementById('editor-pixel-max');
+  if(span) span.textContent = maxP;
+}
+
+function clearSkinCanvas(){
+  if(!confirm('Очистити весь холст?')) return;
+  for(let i=0;i<256;i++){
+    if(editorPixels[i]!==null){
+      SAVE.resources.pixel_hours++;
+      editorPixels[i]=null;
+    }
+  }
+  editorDirty=true;
+  drawSkinCanvas();
+  updateEditorStats();
+  saveToDisk();
+  toast('🗑 Очищено');
+}
+
+function saveSkinDraft(){
+  // Count pixels used
+  const used = editorPixels.filter(p=>p!==null).length;
+  if(used===0){
+    toast('❌ Холст порожній!');
+    return;
+  }
+  const skin = {
+    id: Date.now(),
+    pixels: [...editorPixels],
+    created: Date.now()
+  };
+  SAVE.inventory.skins.push(skin);
+  saveToDisk();
+  updateUI();
+  toast('💾 Чернетку збережено!');
+}
+
+function equipSkin(){
+  const used = editorPixels.filter(p=>p!==null).length;
+  if(used===0){
+    toast('❌ Холст порожній!');
+    return;
+  }
+  // Check if current skin is already saved
+  let skin = SAVE.inventory.skins.find(s=>{
+    if(!s.pixels) return false;
+    for(let i=0;i<256;i++){
+      if(s.pixels[i]!==editorPixels[i]) return false;
+    }
+    return true;
+  });
+  if(!skin){
+    // Save as new
+    skin = {
+      id: Date.now(),
+      pixels: [...editorPixels],
+      created: Date.now()
+    };
+    SAVE.inventory.skins.push(skin);
+  }
+  SAVE.equipped_skin = skin;
+  SAVE.resources.pixel_hours = Math.min(SAVE.resources.pixel_hours + (256-used), 9999);
+  saveToDisk();
+  updateUI();
+  updateEditorStats();
+  toast('⭐ Скін екіпіровано! Кольори повернуто!');
+}
+
+function sellSkin(){
+  const used = editorPixels.filter(p=>p!==null).length;
+  if(used===0){
+    toast('❌ Немає що продавати!');
+    return;
+  }
+  if(!confirm('Продати поточний скін за '+(used*2)+' Gold? Пікселі повернуться.')){
+    return;
+  }
+  const gold = used * 2;
+  SAVE.resources.gold += gold;
+  SAVE.resources.pixel_hours += used;
+  for(let i=0;i<256;i++) editorPixels[i]=null;
+  // Remove from saved skins if exists
+  let skin = SAVE.inventory.skins.find(s=>{
+    if(!s.pixels) return false;
+    for(let i=0;i<256;i++){
+      if(s.pixels[i]!==editorPixels[i]) return false;
+    }
+    return true;
+  });
+  if(skin){
+    const idx = SAVE.inventory.skins.indexOf(skin);
+    if(idx>=0) SAVE.inventory.skins.splice(idx,1);
+  }
+  if(SAVE.equipped_skin && SAVE.equipped_skin.id===skin?.id){
+    SAVE.equipped_skin = null;
+  }
+  saveToDisk();
+  updateUI();
+  drawSkinCanvas();
+  updateEditorStats();
+  toast('💰 Скін продано за '+gold+' Gold!');
+}
+
+function hexToRgb(hex){
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+// ===== CHAT =====
+function sendChat(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text){
+    toast('❌ Введіть повідомлення');
+    return;
+  }
+  const hash = Math.random().toString(16).slice(2,10);
+  const msg = {
+    hash: hash,
+    author: 'Анонім',
+    text: text,
+    time: Date.now(),
+    trade: null
+  };
+  // Check for trade pattern: "sell:item:price" or "buy:item:price"
+  const tradeMatch = text.match(/^(sell|buy):(\w+):(\d+)$/i);
+  if(tradeMatch){
+    msg.trade = {
+      type: tradeMatch[1].toLowerCase(),
+      item: tradeMatch[2].toLowerCase(),
+      price: parseInt(tradeMatch[3])
+    };
+  }
+  SAVE.chat.push(msg);
+  saveToDisk();
+  input.value='';
+  renderChat();
+}
+
+function renderChat(){
+  const container = document.getElementById('chat-messages');
+  if(!SAVE.chat.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">💬</span>Ще немає повідомлень</div>';
+    return;
+  }
+  // Show last 50 messages
+  const msgs = SAVE.chat.slice(-50);
+  let html='';
+  for(const m of msgs){
+    html+=`<div class="chat-msg">
+      <div><span class="chat-hash">[${m.hash}]</span> <span class="chat-author">${m.author}</span></div>
+      <div class="chat-text">${escapeHtml(m.text)}</div>`;
+    if(m.trade){
+      const action = m.trade.type==='sell'?'💰 Продає':'🛒 Купує';
+      html+=`<div class="chat-trade">
+        ${action} <strong>${m.trade.item}</strong> за ${m.trade.price} 🪙
+        <span class="trade-action" onclick="acceptTrade('${m.hash}')">[Прийняти]</span>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  container.innerHTML=html;
+  container.scrollTop = container.scrollHeight;
+}
+
+function acceptTrade(hash){
+  const msg = SAVE.chat.find(m=>m.hash===hash);
+  if(!msg || !msg.trade){
+    toast('❌ Пропозицію не знайдено');
+    return;
+  }
+  const trade = msg.trade;
+  // Simple trade: pay the price, get generic reward
+  if(SAVE.resources.gold < trade.price){
+    toast('❌ Недостатньо Gold для торгівлі!');
+    return;
+  }
+  SAVE.resources.gold -= trade.price;
+  SAVE.resources.sapphire += 1; // Generic trade reward
+  saveToDisk();
+  updateUI();
+  toast('✅ Угоду завершено! Отримано 1 💎 Сапфір');
+  // Remove the trade offer
+  msg.trade = null;
+  saveToDisk();
+  renderChat();
+}
+
+function clearChat(){
+  if(!confirm('Очистити весь чат?')) return;
+  SAVE.chat = [];
+  saveToDisk();
+  renderChat();
+  toast('🗑 Чат очищено');
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(()=>{
+    if(document.getElementById('screen-match3').classList.contains('active')){
+      renderBoard();
+    }
+  },200);
+});
+
+// ===== INIT =====
+updateUI();
+// Pre-fill editor with equipped skin if it exists
+if(SAVE.equipped_skin && SAVE.equipped_skin.pixels){
+  for(let i=0;i<256;i++){
+    editorPixels[i] = SAVE.equipped_skin.pixels[i] || null;
+  }
+}
+console.log('⬡ Habitat OS loaded');
+console.log('Save data:', SAVE);
+</script>
+</body>
+</html>
