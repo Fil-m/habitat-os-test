@@ -948,7 +948,11 @@ function updateUI(){
 // ===== SCREEN NAV =====
 async function showScreen(id){
   // Chat polling lifecycle
-  if(id==='chat') startChatPolling();
+  if(id==='chat') {
+    await loadChatFromGitHub();
+    renderChat();
+    startChatPolling();
+  }
   else stopChatPolling();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const screen = document.getElementById('screen-'+id);
@@ -969,7 +973,6 @@ async function showScreen(id){
       return;
     }
   }
-  if(id==='chat') await renderChat();
   if(id==='shop') { renderShopPacks(); renderMarketListings(); }
   if(id==='profile') updateProfile();
   if(id==='achieve') {
@@ -2167,10 +2170,8 @@ function updateGithubUI(){
 // Override renderChat to show date + player name + load from GitHub
 const _origRenderChat = renderChat || function(){};
 async function renderChat(){
-  // Load latest chat from GitHub for P2P sync
-  await loadChatFromGitHub();
-  saveToDisk();
   const container = document.getElementById('chat-messages');
+  if(!container) return;
   if(!SAVE.chat.length){
     container.innerHTML='<div class="empty-state"><span class="icon">💬</span>Ще немає повідомлень</div>';
     return;
