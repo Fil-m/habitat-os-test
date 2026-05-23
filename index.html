@@ -177,6 +177,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .editor-palette .p-color{width:100%;aspect-ratio:1;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all .15s}
 .editor-palette .p-color.active{border-color:var(--neon);transform:scale(1.1);box-shadow:0 0 12px rgba(0,240,255,0.4)}
 .editor-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.editor-layers{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.editor-layers .layer-btn{padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--text3);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.editor-layers .layer-btn.active{border-color:var(--neon);background:var(--surface2);color:var(--neon);box-shadow:0 0 10px rgba(0,240,255,0.2)}
 .editor-stats{font-family:var(--mono);font-size:13px;color:var(--text2);text-align:center}
 
 /* Chat */
@@ -691,6 +694,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
           Клік = 1 піксель-година · ПКМ = стерти
         </div>
+        <div class="editor-layers" id="editor-layers">
+          <button class="layer-btn active" data-layer="gem" onclick="setEditorLayer('gem')">🎨 Камінець</button>
+          <button class="layer-btn" data-layer="frame" onclick="setEditorLayer('frame')">⊞ Рамка</button>
+          <button class="layer-btn" data-layer="bg" onclick="setEditorLayer('bg')">🖼 Фон</button>
+        </div>
       </div>
     </div>
     <div style="flex:1;min-height:20px"></div>
@@ -1043,18 +1051,43 @@ function renderBoard(){
       if(eqSkinId){
         const eqSkin = SAVE.inventory.skins.find(s=>s.id===eqSkinId);
         if(eqSkin && eqSkin.pixels && eqSkin.pixels.some(p=>p!==null)){
-          // Render pixel art from skin
-          const dataUrl = renderPixelsToDataUrl(eqSkin.pixels, eqSkin.size || 16);
-          gem.className = 'gem';
-          gem.style.backgroundImage = 'url('+dataUrl+')';
-          gem.style.backgroundSize = '100% 100%';
-          gem.style.backgroundPosition = 'center';
-          gem.style.backgroundRepeat = 'no-repeat';
-          gem.style.borderRadius = '0';
-          gem.style.clipPath = 'none';
-          gem.style.border = 'none';
-          gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
-          skinApplied = true;
+          // Render pixel art from skin — check for multi-layer
+          const hasBg = eqSkin.bg_pixels && eqSkin.bg_pixels.some(p=>p!==null);
+          const hasFrame = eqSkin.frame_pixels && eqSkin.frame_pixels.some(p=>p!==null);
+          if(hasBg || hasFrame){
+            // Multi-layer: bg on cell, gem+frame composited on gem with clipPath
+            if(hasBg){
+              const bgUrl = renderPixelsToDataUrl(eqSkin.bg_pixels, eqSkin.size || 16);
+              cell.style.backgroundImage = 'url('+bgUrl+')';
+              cell.style.backgroundSize = '100% 100%';
+              cell.style.backgroundPosition = 'center';
+              cell.style.backgroundRepeat = 'no-repeat';
+            }
+            const compositeUrl = renderGemCompositeDataUrl(eqSkin, gt);
+            gem.className = 'gem';
+            gem.style.backgroundImage = 'url('+compositeUrl+')';
+            gem.style.backgroundSize = '100% 100%';
+            gem.style.backgroundPosition = 'center';
+            gem.style.backgroundRepeat = 'no-repeat';
+            gem.style.borderRadius = '0';
+            gem.style.clipPath = getGemClipPath(gt);
+            gem.style.border = 'none';
+            gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
+            skinApplied = true;
+          }else{
+            // Single layer (gem only) — original rendering
+            const dataUrl = renderPixelsToDataUrl(eqSkin.pixels, eqSkin.size || 16);
+            gem.className = 'gem';
+            gem.style.backgroundImage = 'url('+dataUrl+')';
+            gem.style.backgroundSize = '100% 100%';
+            gem.style.backgroundPosition = 'center';
+            gem.style.backgroundRepeat = 'no-repeat';
+            gem.style.borderRadius = '0';
+            gem.style.clipPath = 'none';
+            gem.style.border = 'none';
+            gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
+            skinApplied = true;
+          }
         }else if(eqSkin && eqSkin.color_override){
           gem.className = 'gem';
           gem.style.background = eqSkin.color_override;
@@ -1547,10 +1580,13 @@ const PALETTE_COLORS = [
 ];
 let editorColor = '#ff4466';
 let editorPixels = [];
+let editorBgPixels = [];
+let editorFramePixels = [];
 let editorSize = 16;
 let editorGemType = null;
 let editorDirty = false;
 let editorInitialized = false;
+let editorActiveLayer = 'gem';
 
 // ===== OPEN SKIN EDITOR =====
 function openSkinEditor(gemType){
@@ -1564,6 +1600,9 @@ function openSkinEditor(gemType){
   editorGemType = gemType;
   editorSize = 16;
   editorPixels = new Array(256).fill(null);
+  editorBgPixels = new Array(256).fill(null);
+  editorFramePixels = new Array(256).fill(null);
+  editorActiveLayer = 'gem';
   editorDirty = false;
   editorInitialized = false;
   showScreen('skineditor');
@@ -1629,12 +1668,19 @@ function setupCanvasDrawing(){
     return y*size + x;
   }
 
+  function getActivePixels(){
+    if(editorActiveLayer === 'bg') return editorBgPixels;
+    if(editorActiveLayer === 'frame') return editorFramePixels;
+    return editorPixels;
+  }
+
   function paint(idx){
     if(idx===null) return;
+    const pixels = getActivePixels();
     // Check if pixel is already colored
-    if(editorPixels[idx]!==null){
+    if(pixels[idx]!==null){
       // Just change color (free)
-      editorPixels[idx] = editorColor;
+      pixels[idx] = editorColor;
       editorDirty = true;
       drawSkinCanvas();
       updateEditorStats();
@@ -1646,7 +1692,7 @@ function setupCanvasDrawing(){
       return;
     }
     SAVE.resources.pixel_hours -= 1;
-    editorPixels[idx] = editorColor;
+    pixels[idx] = editorColor;
     editorDirty = true;
     drawSkinCanvas();
     updateEditorStats();
@@ -1655,8 +1701,9 @@ function setupCanvasDrawing(){
 
   function erase(idx){
     if(idx===null) return;
-    if(editorPixels[idx]!==null){
-      editorPixels[idx]=null;
+    const pixels = getActivePixels();
+    if(pixels[idx]!==null){
+      pixels[idx]=null;
       editorDirty=true;
       drawSkinCanvas();
       updateEditorStats();
@@ -1685,8 +1732,12 @@ function drawSkinCanvas(){
   const size = editorSize;
   const total = size * size;
   const imageData = ctx.createImageData(size,size);
+  let pixels;
+  if(editorActiveLayer === 'bg') pixels = editorBgPixels;
+  else if(editorActiveLayer === 'frame') pixels = editorFramePixels;
+  else pixels = editorPixels;
   for(let i=0;i<total;i++){
-    const color = editorPixels[i];
+    const color = pixels[i];
     let r,g,b;
     if(color){
       [r,g,b] = hexToRgb(color);
@@ -1710,28 +1761,40 @@ function drawSkinCanvas(){
   }
 }
 
+function setEditorLayer(layer){
+  editorActiveLayer = layer;
+  document.querySelectorAll('.layer-btn').forEach(b=>b.classList.toggle('active', b.dataset.layer===layer));
+  drawSkinCanvas();
+  updateEditorStats();
+}
+
 function updateEditorStats(){
-  const used = editorPixels.filter(p=>p!==null).length;
+  const gemUsed = editorPixels.filter(p=>p!==null).length;
+  const bgUsed = editorBgPixels.filter(p=>p!==null).length;
+  const frameUsed = editorFramePixels.filter(p=>p!==null).length;
   const total = editorSize * editorSize;
-  document.getElementById('editor-stats').innerHTML = `Пікселів використано: ${used} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год`;
+  document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год`;
   document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
 }
 
 function clearSkinCanvas(){
-  if(!confirm('Очистити весь холст?')) return;
-  for(let i=0;i<editorPixels.length;i++){
-    editorPixels[i]=null;
+  if(!confirm('Очистити активний шар?')) return;
+  const pixels = (editorActiveLayer === 'bg') ? editorBgPixels : (editorActiveLayer === 'frame') ? editorFramePixels : editorPixels;
+  for(let i=0;i<pixels.length;i++){
+    pixels[i]=null;
   }
   editorDirty=true;
   drawSkinCanvas();
   updateEditorStats();
-  toast('🗑 Очищено');
+  toast('🗑 Шар "'+editorActiveLayer+'" очищено');
 }
 
 function saveSkinFromEditor(){
-  const used = editorPixels.filter(p=>p!==null).length;
-  if(used===0){
-    toast('❌ Скін порожній! Намалюйте щось.');
+  const gemUsed = editorPixels.filter(p=>p!==null).length;
+  const bgUsed = editorBgPixels.filter(p=>p!==null).length;
+  const frameUsed = editorFramePixels.filter(p=>p!==null).length;
+  if(gemUsed===0 && bgUsed===0 && frameUsed===0){
+    toast('❌ Скін порожній! Намалюйте щось хоча б на одному шарі.');
     return;
   }
   if(!editorGemType){
@@ -1751,6 +1814,8 @@ function saveSkinFromEditor(){
     gem_type: editorGemType,
     size: editorSize,
     pixels: [...editorPixels],
+    bg_pixels: bgUsed > 0 ? [...editorBgPixels] : null,
+    frame_pixels: frameUsed > 0 ? [...editorFramePixels] : null,
     age_hours: 0,
     created: today
   };
@@ -1793,10 +1858,18 @@ function updateSkinList(){
       html += `
       <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:${isEquipped?'2px solid var(--neon)':'1px solid transparent'}">
         <div style="display:flex;align-items:center;gap:10px">
-          <canvas id="inv-skin-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;flex-shrink:0"></canvas>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <div><div style="font-size:9px;color:var(--text3);text-align:center;margin-bottom:2px">🎨</div><canvas id="inv-skin-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas></div>
+            ${(s.bg_pixels && s.bg_pixels.some(p=>p!==null)) ? `<div><div style="font-size:9px;color:var(--text3);text-align:center;margin-bottom:2px">🖼</div><canvas id="inv-skin-bg-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas></div>` : ''}
+            ${(s.frame_pixels && s.frame_pixels.some(p=>p!==null)) ? `<div><div style="font-size:9px;color:var(--text3);text-align:center;margin-bottom:2px">⊞</div><canvas id="inv-skin-fr-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas></div>` : ''}
+          </div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
-            <div style="font-size:11px;color:var(--text2)">${s.color_override ? '🎨 '+s.color_override : used+'/'+total+' px'}</div>
+            <div style="font-size:11px;color:var(--text2)">${s.color_override ? '🎨 '+s.color_override : ''}
+              ${s.pixels&&s.pixels.some(p=>p!==null)?'🎨'+s.pixels.filter(p=>p!==null).length:'🎨0'}
+              ${s.bg_pixels&&s.bg_pixels.some(p=>p!==null)?' · 🖼'+s.bg_pixels.filter(p=>p!==null).length:''}
+              ${s.frame_pixels&&s.frame_pixels.some(p=>p!==null)?' · ⊞'+s.frame_pixels.filter(p=>p!==null).length:''}
+            </div>
             <div style="font-size:10px;color:var(--text3)">📅 ${s.created||'—'}</div>
           </div>
         </div>
@@ -1819,12 +1892,13 @@ function updateSkinList(){
     for(const gt of gemOrder){
       const groupSkins = skins.filter(s=>s.gem_type===gt || s.type===gt);
       for(let i=0;i<groupSkins.length;i++){
-        const canvas = document.getElementById('inv-skin-'+gt+'-'+i);
-        if(canvas){
-          const ctx = canvas.getContext('2d');
-          const s = groupSkins[i];
-          const sz = s.size || 16;
-          const total = sz * sz;
+        const s = groupSkins[i];
+        const sz = s.size || 16;
+        const total = sz * sz;
+        // Gem layer
+        const gemCanvas = document.getElementById('inv-skin-'+gt+'-'+i);
+        if(gemCanvas){
+          const ctx = gemCanvas.getContext('2d');
           const imageData = ctx.createImageData(sz, sz);
           const pixels = s.pixels || [];
           for(let p=0;p<total;p++){
@@ -1834,6 +1908,30 @@ function updateSkinList(){
             } else {
               color = pixels[p] ? pixels[p] : '#1a1d33';
             }
+            const [r,g,b] = hexToRgb(color);
+            imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+          }
+          ctx.putImageData(imageData,0,0);
+        }
+        // Background layer
+        const bgCanvas = document.getElementById('inv-skin-bg-'+gt+'-'+i);
+        if(bgCanvas && s.bg_pixels){
+          const ctx = bgCanvas.getContext('2d');
+          const imageData = ctx.createImageData(sz, sz);
+          for(let p=0;p<total;p++){
+            const color = s.bg_pixels[p] ? s.bg_pixels[p] : '#1a1d33';
+            const [r,g,b] = hexToRgb(color);
+            imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+          }
+          ctx.putImageData(imageData,0,0);
+        }
+        // Frame layer
+        const frCanvas = document.getElementById('inv-skin-fr-'+gt+'-'+i);
+        if(frCanvas && s.frame_pixels){
+          const ctx = frCanvas.getContext('2d');
+          const imageData = ctx.createImageData(sz, sz);
+          for(let p=0;p<total;p++){
+            const color = s.frame_pixels[p] ? s.frame_pixels[p] : '#1a1d33';
             const [r,g,b] = hexToRgb(color);
             imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
           }
@@ -1867,9 +1965,12 @@ function unequipSkinByType(gemType){
 function sellSkinById(skinId){
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
-  const used = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
-  const price = used * 2;
-  if(!confirm('Продати "'+skin.name+'" за '+price+' 🪙?')) return;
+  const gemUsed = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
+  const bgUsed = skin.bg_pixels ? skin.bg_pixels.filter(p=>p!==null).length : 0;
+  const frameUsed = skin.frame_pixels ? skin.frame_pixels.filter(p=>p!==null).length : 0;
+  const totalUsed = gemUsed + bgUsed + frameUsed;
+  const price = Math.max(1, totalUsed * 2);
+  if(!confirm('Продати "'+skin.name+'" за '+price+' 🪙? ('+totalUsed+' пікселів)')) return;
   SAVE.resources.gold += price;
   SAVE.stats.skins_sold = (SAVE.stats.skins_sold || 0) + 1;
   // Remove from inventory
@@ -1927,6 +2028,86 @@ function renderPixelsToDataUrl(pixels, size){
     imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
   }
   ctx.putImageData(imageData,0,0);
+  return canvas.toDataURL();
+}
+
+function getGemClipPath(gemType){
+  // Returns CSS clip-path for gem shape by gem index or name
+  const shapes = [
+    'circle(50% at 50% 50%)',                          // ruby — circle
+    'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',     // sapphire — diamond
+    'polygon(50% 5%, 95% 95%, 5% 95%)',                 // gold — triangle
+    'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'      // emerald — diamond
+  ];
+  const gemNames = ['ruby','sapphire','gold','emerald'];
+  if(typeof gemType === 'number' && gemType >= 0 && gemType < 4) return shapes[gemType];
+  const idx = gemNames.indexOf(gemType);
+  if(idx >= 0) return shapes[idx];
+  return 'none';
+}
+
+function renderGemCompositeDataUrl(skin, gemType){
+  const size = skin.size || 16;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Apply clip path for gem shape
+  const gemIdx = (typeof gemType === 'number') ? gemType : ['ruby','sapphire','gold','emerald'].indexOf(gemType) || 0;
+  const clipPath = new Path2D();
+  const cx = size/2, cy = size/2, r = size/2 - 0.5;
+  switch(gemIdx){
+    case 0: // Ruby — circle
+      clipPath.arc(cx, cy, r, 0, Math.PI*2);
+      break;
+    case 1: // Sapphire — diamond
+      clipPath.moveTo(cx, 0); clipPath.lineTo(size, cy); clipPath.lineTo(cx, size); clipPath.lineTo(0, cy);
+      clipPath.closePath();
+      break;
+    case 2: // Gold — triangle
+      clipPath.moveTo(cx, 0.5*size/16); clipPath.lineTo(size*0.95, size*0.95); clipPath.lineTo(size*0.05, size*0.95);
+      clipPath.closePath();
+      break;
+    case 3: // Emerald — diamond
+      clipPath.moveTo(cx, 0); clipPath.lineTo(size, cy); clipPath.lineTo(cx, size); clipPath.lineTo(0, cy);
+      clipPath.closePath();
+      break;
+  }
+  ctx.save();
+  ctx.clip(clipPath);
+
+  // 2. Draw gem pixels
+  const gemPixels = skin.pixels || [];
+  const total = size * size;
+  const gemData = ctx.createImageData(size, size);
+  for(let i=0;i<total;i++){
+    const color = gemPixels[i];
+    if(color){
+      const [r,g,b] = hexToRgb(color);
+      gemData.data[i*4]=r; gemData.data[i*4+1]=g; gemData.data[i*4+2]=b; gemData.data[i*4+3]=255;
+    }else{
+      gemData.data[i*4]=0; gemData.data[i*4+1]=0; gemData.data[i*4+2]=0; gemData.data[i*4+3]=0;
+    }
+  }
+  ctx.putImageData(gemData, 0, 0);
+
+  // 3. Draw frame pixels on top
+  if(skin.frame_pixels && skin.frame_pixels.some(p=>p!==null)){
+    const frameData = ctx.createImageData(size, size);
+    for(let i=0;i<total;i++){
+      const color = skin.frame_pixels[i];
+      if(color){
+        const [r,g,b] = hexToRgb(color);
+        frameData.data[i*4]=r; frameData.data[i*4+1]=g; frameData.data[i*4+2]=b; frameData.data[i*4+3]=255;
+      }else{
+        frameData.data[i*4]=0; frameData.data[i*4+1]=0; frameData.data[i*4+2]=0; frameData.data[i*4+3]=0;
+      }
+    }
+    ctx.putImageData(frameData, 0, 0);
+  }
+
+  ctx.restore();
   return canvas.toDataURL();
 }
 
