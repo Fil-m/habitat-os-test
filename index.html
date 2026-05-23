@@ -373,37 +373,53 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="shop-category" data-game="match3">🎨 Холсти для скінів</div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyCanvas('ruby')" data-game="match3">
+      <div class="shop-item" data-game="match3">
         <div class="shop-icon">🟣</div>
         <div class="shop-info">
           <div class="shop-name">Ruby Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Ruby</div>
         </div>
-        <div class="shop-price" id="canvas-price-ruby">20 🪙</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-small btn-primary" onclick="buyCanvas('ruby','gem')">🎨 20🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('ruby','bg')">🖼 15🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('ruby','frame')">⊞ 15🪙</button>
+        </div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('sapphire')" data-game="match3">
+      <div class="shop-item" data-game="match3">
         <div class="shop-icon">🔵</div>
         <div class="shop-info">
           <div class="shop-name">Sapphire Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Sapphire</div>
         </div>
-        <div class="shop-price" id="canvas-price-sapphire">20 🪙</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-small btn-primary" onclick="buyCanvas('sapphire','gem')">🎨 20🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('sapphire','bg')">🖼 15🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('sapphire','frame')">⊞ 15🪙</button>
+        </div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('gold')" data-game="match3">
+      <div class="shop-item" data-game="match3">
         <div class="shop-icon">🟡</div>
         <div class="shop-info">
           <div class="shop-name">Gold Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Gold</div>
         </div>
-        <div class="shop-price" id="canvas-price-gold">20 🪙</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-small btn-primary" onclick="buyCanvas('gold','gem')">🎨 20🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('gold','bg')">🖼 15🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('gold','frame')">⊞ 15🪙</button>
+        </div>
       </div>
-      <div class="shop-item" onclick="buyCanvas('emerald')" data-game="match3">
+      <div class="shop-item" data-game="match3">
         <div class="shop-icon">🟢</div>
         <div class="shop-info">
           <div class="shop-name">Emerald Canvas — 16×16</div>
           <div class="shop-desc">Холст для малювання скіна Emerald</div>
         </div>
-        <div class="shop-price" id="canvas-price-emerald">20 🪙</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-small btn-primary" onclick="buyCanvas('emerald','gem')">🎨 20🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('emerald','bg')">🖼 15🪙</button>
+          <button class="btn btn-small btn-secondary" onclick="buyCanvas('emerald','frame')">⊞ 15🪙</button>
+        </div>
       </div>
     </div>
     <div class="shop-category" data-game="match3">⚡ Покращення Match-3</div>
@@ -708,8 +724,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="lt-options" id="lt-options"></div>
         <div class="editor-cost-stats" id="editor-cost-stats">🆕 0 нових · 💰 0 px-год · ⌛ 24h</div>
         <div class="editor-tools">
+          <div style="display:flex;gap:8px;padding:4px 0">
+            <button class="btn btn-small btn-primary" id="tool-pen" onclick="setEditorTool('pen')">✏️</button>
+            <button class="btn btn-small btn-secondary" id="tool-eraser" onclick="setEditorTool('eraser')">🧹</button>
+          </div>
           <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
-          🖱 Клік = малювати · ПКМ = стерти
         </div>
         <div class="editor-layers" id="editor-layers">
           <button class="layer-btn active" data-layer="gem" onclick="setEditorLayer('gem')">🎨 Камінець</button>
@@ -1013,6 +1032,14 @@ async function showScreen(id){
     selectMiner(selectedMiner);
   }
   updateUI();
+}
+
+function setEditorTool(tool){
+  editorTool = tool;
+  document.querySelectorAll('[id^="tool-"]').forEach(b=>b.className='btn btn-small btn-secondary');
+  const btn = document.getElementById('tool-'+tool);
+  if(btn) btn.className = 'btn btn-small btn-primary';
+  toast(tool==='pen' ? '✏️ Карандаш' : '🧹 Резинка');
 }
 
 // ===== MATCH-3 GAME =====
@@ -1501,10 +1528,10 @@ function applyShopFilter(){
 
 // ===== CANVAS TYPES FOR SKIN EDITOR =====
 const CANVAS_TYPES = {
-  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby'},
-  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire'},
-  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold'},
-  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
+  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby', layer_prices:{gem:20, bg:15, frame:15}},
+  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire', layer_prices:{gem:20, bg:15, frame:15}},
+  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold', layer_prices:{gem:20, bg:15, frame:15}},
+  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald', layer_prices:{gem:20, bg:15, frame:15}},
 };
 
 // ===== SHOP FUNCTIONS =====
@@ -1558,33 +1585,40 @@ function updateAchieveList(){
 }
 
 // ===== CANVAS SHOP =====
-function buyCanvas(type){
+function buyCanvas(type, layer){
+  layer = layer || 'gem';
   const ct = CANVAS_TYPES[type];
   if(!ct){ toast('❌ Невідомий тип холста'); return; }
-  if(SAVE.resources.gold < ct.price){
-    toast('❌ Недостатньо Gold! Потрібно '+ct.price+' 🪙');
+  const price = (ct.layer_prices && ct.layer_prices[layer]) || ct.price;
+  if(SAVE.resources.gold < price){
+    toast('❌ Недостатньо Gold! Потрібно '+price+' 🪙');
     return;
   }
   if(!Array.isArray(SAVE.inventory.canvases)) SAVE.inventory.canvases = [];
-  // Check if already have an unused canvas of this type
-  const existing = SAVE.inventory.canvases.find(c=>c.type===type);
+  // Check if already have an unused canvas of this type+layer
+  const existing = SAVE.inventory.canvases.find(c=>c.type===type && c.layer===layer);
   if(existing){
-    toast('ℹ️ У вас вже є невикористаний '+ct.name);
+    toast('ℹ️ У вас вже є невикористаний '+ct.name+' ('+layerLabel(layer)+')');
     return;
   }
-  SAVE.resources.gold -= ct.price;
+  SAVE.resources.gold -= price;
   const newCanvas = {
     id: 'cv_'+Date.now(),
     type: type,
+    layer: layer,
     purchased: Date.now()
   };
   SAVE.inventory.canvases.push(newCanvas);
   const canvasIdx = SAVE.inventory.canvases.length - 1;
   saveToDisk();
   updateUI();
-  if(confirm('✅ '+ct.name+' придбано! Відкрити редактор?')){
+  if(confirm('✅ '+ct.name+' ('+layerLabel(layer)+') придбано! Відкрити редактор?')){
     openSkinEditor(type, canvasIdx);
   }
+}
+
+function layerLabel(layer){
+  return layer==='gem' ? '🎨 Камінець' : layer==='bg' ? '🖼 Фон' : layer==='frame' ? '⊞ Рамка' : layer;
 }
 
 // ===== EFFECTS & RULES SYSTEM =====
@@ -1692,6 +1726,7 @@ let editorInitialized = false;
 let editorActiveLayer = 'gem';
 let editorEditingSkinId = null; // null = new skin, string = editing existing skin
 let editorCanvasIdx = -1; // index in SAVE.inventory.canvases for new skins
+let editorTool = 'pen'; // 'pen' or 'eraser'
 let editorPixelTimestamps = []; // timestamps for each pixel in editorPixels
 let editorPixelLifetimes = [];  // lifetime ms for each pixel
 let editorBgPixelLifetimes = [];
@@ -1702,8 +1737,13 @@ let editorNewPixelsCount = 0; // pixels painted in this session
 let editorSessionCost = 0; // total pixel-hours cost accrued this session
 
 function openSkinEditor(gemType, canvasIndex){
+  let canvasLayer = 'gem';
   if(typeof canvasIndex === 'number' && canvasIndex >= 0){
     editorCanvasIdx = canvasIndex;
+    // Read layer from canvas if available
+    const canvases = SAVE.inventory.canvases || [];
+    const cv = canvases[canvasIndex];
+    if(cv && cv.layer) canvasLayer = cv.layer;
   } else {
     editorCanvasIdx = -1;
   }
@@ -1726,8 +1766,9 @@ function openSkinEditor(gemType, canvasIndex){
   editorPixelCost = 3;
   editorNewPixelsCount = 0;
   editorSessionCost = 0;
-  editorActiveLayer = 'gem';
+  editorActiveLayer = canvasLayer;
   editorDirty = false;
+  editorTool = 'pen';
   editorInitialized = false;
   // Build lifetime selector UI (async-safe: DOM may not exist yet, will build on init)
   setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
@@ -1781,6 +1822,7 @@ function openExistingSkin(skinId){
   editorSessionCost = 0;
   editorActiveLayer = 'gem';
   editorDirty = false;
+  editorTool = 'pen';
   editorInitialized = false;
   setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
   showScreen('skineditor');
@@ -1798,7 +1840,7 @@ function initEditorCanvas(){
   drawSkinCanvas();
   setupCanvasDrawing();
   updateEditorStats();
-  toast('🎨 Малюйте! ПКМ — стерти піксель.');
+  toast('🎨 Використовуйте ✏️ Pen та 🧹 Eraser');
 }
 
 function closeEditorAndGoBack(){
@@ -1921,15 +1963,15 @@ function setupCanvasDrawing(){
     }
   }
 
-  canvas.addEventListener('mousedown',(e)=>{painting=true; paint(getPixel(e));});
-  canvas.addEventListener('mousemove',(e)=>{if(painting) paint(getPixel(e));});
+  canvas.addEventListener('mousedown',(e)=>{painting=true; (editorTool==='eraser'?erase:paint)(getPixel(e));});
+  canvas.addEventListener('mousemove',(e)=>{if(painting) (editorTool==='eraser'?erase:paint)(getPixel(e));});
   canvas.addEventListener('mouseup',()=>{painting=false;});
   canvas.addEventListener('mouseleave',()=>{painting=false;});
-  canvas.addEventListener('touchstart',(e)=>{e.preventDefault();painting=true; paint(getPixel(e));},{passive:false});
-  canvas.addEventListener('touchmove',(e)=>{e.preventDefault();if(painting) paint(getPixel(e));},{passive:false});
+  canvas.addEventListener('touchstart',(e)=>{e.preventDefault();painting=true; (editorTool==='eraser'?erase:paint)(getPixel(e));},{passive:false});
+  canvas.addEventListener('touchmove',(e)=>{e.preventDefault();if(painting) (editorTool==='eraser'?erase:paint)(getPixel(e));},{passive:false});
   canvas.addEventListener('touchend',()=>{painting=false;});
 
-  // Right click to erase
+  // Right click to erase (still works as backup)
   canvas.addEventListener('contextmenu',(e)=>{
     e.preventDefault();
     const idx = getPixel(e);
@@ -2188,12 +2230,14 @@ function updateAchieveCanvasList(){
   }
   const ctIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
   const ctNames = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
+  const layerNames = {gem:'🎨 Камінець', bg:'🖼 Фон', frame:'⊞ Рамка'};
   let html = '';
   for(let i=0;i<canvases.length;i++){
     const c = canvases[i];
+    const layerName = layerNames[c.layer] || '🎨';
     html += `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;margin:4px 0;background:var(--surface2);border-radius:var(--radius-sm)">
-        <span>${ctIcons[c.type]||'🎨'} ${ctNames[c.type]||c.type}</span>
+        <span>${ctIcons[c.type]||'🎨'} ${ctNames[c.type]||c.type} <span style="font-size:11px;color:var(--text2)">(${layerName})</span></span>
         <button class="btn btn-small btn-primary" onclick="openSkinEditor('${c.type}',${i})">🎨 Малювати</button>
       </div>`;
   }
