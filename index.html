@@ -1576,15 +1576,17 @@ function buyCanvas(type){
     return;
   }
   SAVE.resources.gold -= ct.price;
-  SAVE.inventory.canvases.push({
+  const newCanvas = {
     id: 'cv_'+Date.now(),
     type: type,
     purchased: Date.now()
-  });
+  };
+  SAVE.inventory.canvases.push(newCanvas);
+  const canvasIdx = SAVE.inventory.canvases.length - 1;
   saveToDisk();
   updateUI();
   if(confirm('✅ '+ct.name+' придбано! Відкрити редактор?')){
-    openSkinEditor(type);
+    openSkinEditor(type, canvasIdx);
   }
 }
 
@@ -1691,6 +1693,7 @@ let editorDirty = false;
 let editorInitialized = false;
 let editorActiveLayer = 'gem';
 let editorEditingSkinId = null; // null = new skin, string = editing existing skin
+let editorCanvasIdx = -1; // index in SAVE.inventory.canvases for new skins
 let editorPixelTimestamps = []; // timestamps for each pixel in editorPixels
 let editorPixelLifetimes = [];  // lifetime ms for each pixel
 let editorBgPixelLifetimes = [];
@@ -1700,7 +1703,12 @@ let editorPixelCost = 3; // current cost per pixel
 let editorNewPixelsCount = 0; // pixels painted in this session
 let editorSessionCost = 0; // total pixel-hours cost accrued this session
 
-function openSkinEditor(gemType){
+function openSkinEditor(gemType, canvasIndex){
+  if(typeof canvasIndex === 'number' && canvasIndex >= 0){
+    editorCanvasIdx = canvasIndex;
+  } else {
+    editorCanvasIdx = -1;
+  }
   const validTypes = ['ruby','sapphire','gold','emerald'];
   if(!gemType || !validTypes.includes(gemType)){
     const choice = prompt('Виберіть тип камінця для скіна:\n1 — Ruby\n2 — Sapphire\n3 — Gold\n4 — Emerald');
@@ -1733,6 +1741,7 @@ function openExistingSkin(skinId){
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
   editorEditingSkinId = skinId;
+  editorCanvasIdx = -1;
   editorGemType = skin.gem_type || skin.type || 'ruby';
   editorSize = skin.size || 16;
   editorPixels = skin.pixels ? [...skin.pixels] : new Array(256).fill(null);
@@ -2102,7 +2111,13 @@ function saveSkinFromEditor(){
   // Check if user has an unused canvas for this gem type
   let canvasIdx = -1;
   if(Array.isArray(SAVE.inventory.canvases)){
-    canvasIdx = SAVE.inventory.canvases.findIndex(c=>c.type===editorGemType);
+    if(editorCanvasIdx >= 0 && editorCanvasIdx < SAVE.inventory.canvases.length){
+      // Use the specific canvas the user clicked on
+      canvasIdx = editorCanvasIdx;
+    } else {
+      // Fallback: find by type (for backward compatibility)
+      canvasIdx = SAVE.inventory.canvases.findIndex(c=>c.type===editorGemType);
+    }
   }
   if(canvasIdx < 0){
     toast('❌ Немає холста для '+label+'! Купіть в магазині.');
@@ -2160,11 +2175,12 @@ function updateAchieveCanvasList(){
   const ctIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
   const ctNames = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
   let html = '';
-  for(const c of canvases){
+  for(let i=0;i<canvases.length;i++){
+    const c = canvases[i];
     html += `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;margin:4px 0;background:var(--surface2);border-radius:var(--radius-sm)">
         <span>${ctIcons[c.type]||'🎨'} ${ctNames[c.type]||c.type}</span>
-        <button class="btn btn-small btn-primary" onclick="openSkinEditor('${c.type}')">🎨 Малювати</button>
+        <button class="btn btn-small btn-primary" onclick="openSkinEditor('${c.type}',${i})">🎨 Малювати</button>
       </div>`;
   }
   container.innerHTML = html;
