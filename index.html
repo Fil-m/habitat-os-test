@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="build" content="2026-05-24-v2">
 <title>Habitat OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬡</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -84,10 +86,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-header{display:flex;justify-content:space-between;padding:10px 16px;background:var(--bg2);align-items:center;font-family:var(--mono);font-size:13px;flex-shrink:0}
 .m3-header .m3-stat{display:flex;align-items:center;gap:6px}
 .m3-header .m3-stat .num{color:var(--neon);font-weight:700}
-.m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0}
-.m3-board{display:grid;gap:2px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
-.m3-cell{width:40px;height:40px;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
+.m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0;aspect-ratio:1/1;width:100%;max-width:400px;margin:0 auto}
+.m3-board{display:grid;gap:4px;background:var(--bg2);padding:10px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
+.m3-cell{width:100%;height:100%;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
 .m3-cell.bw{opacity:0.85}
+.m3-cell.selected{box-shadow:0 0 16px var(--neon);transform:scale(1.05);z-index:2}
+.m3-cell.selected .gem{box-shadow:0 0 12px var(--neon)}
+.m3-cell.lucky{box-shadow:0 0 20px var(--gold);transform:scale(1.08);z-index:3;animation:pulse-gold .8s infinite alternate}
+@keyframes pulse-gold{from{box-shadow:0 0 10px var(--gold)}to{box-shadow:0 0 25px var(--gold)}}
 /* MATCH-3 GEMS — distinct shapes + high contrast */
 .m3-cell .gem{
   width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
@@ -210,6 +216,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .ach-item .ach-name{font-weight:600}
 .ach-item .ach-desc{font-size:11px;color:var(--text2)}
 .ach-item .ach-buy{font-size:12px;color:var(--gold);font-weight:700;cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:4px;background:var(--surface);transition:all .2s}
+.duel-player{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:4px;cursor:pointer}
+.duel-player:hover{background:var(--surface)}
 .ach-item .ach-buy:active{background:var(--surface2);transform:scale(0.95)}
 
 /* Empty state */
@@ -218,13 +226,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 /* Responsive */
 @media(min-width:480px){
-  .m3-cell{width:48px;height:48px}
-  .m3-cell .gem{width:38px;height:38px}
   .editor-canvas-wrap canvas{width:384px;height:384px}
 }
 @media(max-width:374px){
-  .m3-cell{width:34px;height:34px}
-  .m3-cell .gem{width:26px;height:26px}
   .editor-canvas-wrap canvas{width:256px;height:256px}
   .resource-grid{grid-template-columns:1fr}
 }
@@ -327,14 +331,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <!-- Match-3 Screen -->
   <div id="screen-match3" class="screen">
     <div class="header">
-      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <button class="btn btn-secondary btn-small" onclick="endMatch3(); showScreen('dashboard')">← Назад</button>
       <h1 style="font-size:15px">☰ MATCH-3</h1>
-      <div style="width:60px"></div>
+      <div class="resources">
+        <span class="resource">🪙<span class="val" id="game-gold">0</span></span>
+        <span class="resource">💎<span class="val" id="game-ruby">0</span></span>
+        <span class="resource">🟡<span class="val" id="game-sapphire">0</span></span>
+      </div>
     </div>
     <div class="m3-header">
       <span class="m3-stat">🎯 <span class="num" id="m3-score">0</span></span>
-      <span class="m3-stat">🔄 <span class="num" id="m3-moves">30</span></span>
+      <span class="m3-stat" id="m3-speed-timer" style="display:none;color:var(--gold)">⏱ 2:00</span>
       <span class="m3-stat">🏆 <span class="num" id="m3-highscore">0</span></span>
+    </div>
+    <div id="duel-bar" style="display:none;padding:6px 16px;background:var(--gold);color:#000;font-size:12px;font-weight:700;text-align:center">
+      🎯 ДУЕЛЬ: <span id="duel-bar-text">—</span>
     </div>
     <div class="m3-board-wrap" id="m3-board-wrap">
       <div class="m3-board" id="m3-board" style="grid-template-columns:repeat(8,40px)"></div>
@@ -403,35 +414,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="btn btn-small btn-primary" onclick="buyCanvas('emerald')">🎨 20🪙</button>
       </div>
     </div>
-    <div class="shop-category" data-game="match3">🖼 Скіни столу</div>
+    <div class="shop-category" data-game="match3">🖼 Скін столу</div>
     <div style="margin:0 16px">
       <div class="shop-item" data-game="match3">
         <div class="shop-icon">🖼</div>
         <div class="shop-info">
-          <div class="shop-name">Board BG Canvas — 32×32</div>
+          <div class="shop-name">Board Canvas — 32×32</div>
           <div class="shop-desc">Фон для всієї дошки Match-3</div>
         </div>
-        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_bg')">🖼 25🪙</button>
-      </div>
-      <div class="shop-item" data-game="match3">
-        <div class="shop-icon">⊞</div>
-        <div class="shop-info">
-          <div class="shop-name">Board Frame Canvas — 32×32</div>
-          <div class="shop-desc">Рамка навколо дошки Match-3</div>
-        </div>
-        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_frame')">⊞ 25🪙</button>
+        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board')">🖼 25🪙</button>
       </div>
     </div>
     <div class="shop-category" data-game="match3">⚡ Покращення Match-3</div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyAchievement('extra_moves')">
-        <div class="shop-icon">🔄</div>
-        <div class="shop-info">
-          <div class="shop-name">+5 ходів</div>
-          <div class="shop-desc">Додаткові ходи в кожній грі</div>
-        </div>
-        <div class="shop-price" id="ach-price-extra_moves">15 🪙</div>
-      </div>
       <div class="shop-item" onclick="buyAchievement('combo')">
         <div class="shop-icon">💥</div>
         <div class="shop-info">
@@ -440,45 +435,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="shop-price" id="ach-price-combo">30 🪙</div>
       </div>
-      <div class="shop-item" onclick="buyAchievement('extra_swap')">
-        <div class="shop-icon">🔄</div>
-        <div class="shop-info">
-          <div class="shop-name">Extra Swap</div>
-          <div class="shop-desc">Можна поміняти 2 сусідні камінці без ходу</div>
-        </div>
-        <div class="shop-price" id="ach-price-extra_swap">20 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('lucky_start')">
-        <div class="shop-icon">💎</div>
-        <div class="shop-info">
-          <div class="shop-name">Lucky Start</div>
-          <div class="shop-desc">Перший хід завжди дає комбо</div>
-        </div>
-        <div class="shop-price" id="ach-price-lucky_start">15 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('shield')">
-        <div class="shop-icon">🛡️</div>
-        <div class="shop-info">
-          <div class="shop-name">Shield</div>
-          <div class="shop-desc">Один провальний хід не зараховується</div>
-        </div>
-        <div class="shop-price" id="ach-price-shield">25 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('time_bonus')">
-        <div class="shop-icon">⏱</div>
-        <div class="shop-info">
-          <div class="shop-name">Time Bonus</div>
-          <div class="shop-desc">+30 секунд в Speed Mode</div>
-        </div>
-        <div class="shop-price" id="ach-price-time_bonus">20 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('target_lock')">
+      <div class="shop-item" onclick="buyAchievement('duel')">
         <div class="shop-icon">🎯</div>
         <div class="shop-info">
-          <div class="shop-name">Target Lock</div>
-          <div class="shop-desc">Показати який камінець дасть найбільше очок</div>
+          <div class="shop-name">Дуель</div>
+          <div class="shop-desc">10-ходова битва з іншим гравцем через GitHub</div>
         </div>
-        <div class="shop-price" id="ach-price-target_lock">30 🪙</div>
+        <div class="shop-price" id="ach-price-duel">50 🪙</div>
       </div>
     </div>
     <div class="shop-category" data-game="all">🏪 Торгівля гравців</div>
@@ -505,42 +468,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn btn-small btn-primary" onclick="buyEffect('gem_glow',5)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" id="eff-star_burst">
-        <div class="shop-icon">💫</div>
-        <div class="shop-info">
-          <div class="shop-name">Star Burst</div>
-          <div class="shop-desc">Зірки при збігу</div>
-          <div class="effect-timer" id="eff-timer-star_burst">4 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-star_burst" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('star_burst',4)">Купити</button>
-        </div>
-      </div>
-      <div class="shop-item" id="eff-rainbow_trail">
-        <div class="shop-icon">🌈</div>
-        <div class="shop-info">
-          <div class="shop-name">Rainbow Trail</div>
-          <div class="shop-desc">Райдужний слід за курсором</div>
-          <div class="effect-timer" id="eff-timer-rainbow_trail">6 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-rainbow_trail" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('rainbow_trail',6)">Купити</button>
-        </div>
-      </div>
-      <div class="shop-item" id="eff-sound_ping">
-        <div class="shop-icon">🎵</div>
-        <div class="shop-info">
-          <div class="shop-name">Sound Ping</div>
-          <div class="shop-desc">Візуальна імітація звукового сигналу при збігу</div>
-          <div class="effect-timer" id="eff-timer-sound_ping">3 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-sound_ping" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('sound_ping',3)">Купити</button>
-        </div>
-      </div>
       <!-- Rules -->
       <div style="font-size:12px;font-weight:600;color:var(--neon);margin:12px 0 4px">🎮 Правила гри</div>
       <div class="shop-item" id="eff-gravity_flip">
@@ -555,52 +482,40 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn btn-small btn-primary" onclick="buyEffect('gravity_flip',10)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" style="opacity:0.5">
+      <div class="shop-item" id="eff-speed_mode">
         <div class="shop-icon">⚡</div>
         <div class="shop-info">
           <div class="shop-name">Speed Mode</div>
-          <div class="shop-desc">Зворотній таймер · 8 🪙/хв</div>
-          <div class="effect-timer">🔜 Незабаром</div>
+          <div class="shop-desc">Зворотній таймер</div>
+          <div class="effect-timer" id="eff-timer-speed_mode">8 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-speed_mode" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('speed_mode',8)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" style="opacity:0.5">
+      <div class="shop-item" id="eff-invisible_gems">
         <div class="shop-icon">👻</div>
         <div class="shop-info">
           <div class="shop-name">Invisible Gems</div>
-          <div class="shop-desc">Камінці невидимі до наведення · 12 🪙/хв</div>
-          <div class="effect-timer">🔜 Незабаром</div>
+          <div class="shop-desc">Камінці невидимі до наведення</div>
+          <div class="effect-timer" id="eff-timer-invisible_gems">12 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-invisible_gems" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('invisible_gems',12)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" style="opacity:0.5">
+      <div class="shop-item" id="eff-bomb_mode">
         <div class="shop-icon">💥</div>
         <div class="shop-info">
           <div class="shop-name">Bomb Mode</div>
-          <div class="shop-desc">Збіг створює вибух навколо · 15 🪙/хв</div>
-          <div class="effect-timer">🔜 Незабаром</div>
-        </div>
-      </div>
-      <div class="shop-item" id="eff-random_swap">
-        <div class="shop-icon">🔄</div>
-        <div class="shop-info">
-          <div class="shop-name">Random Swap</div>
-          <div class="shop-desc">Кожен хід 2 випадкові камінці міняються</div>
-          <div class="effect-timer" id="eff-timer-random_swap">8 🪙/хв · Неактивно</div>
+          <div class="shop-desc">Збіг створює вибух навколо</div>
+          <div class="effect-timer" id="eff-timer-bomb_mode">15 🪙/хв · Неактивно</div>
         </div>
         <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-random_swap" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('random_swap',8)">Купити</button>
-        </div>
-      </div>
-      <div class="shop-item" id="eff-frozen_row">
-        <div class="shop-icon">🧊</div>
-        <div class="shop-info">
-          <div class="shop-name">Frozen Row</div>
-          <div class="shop-desc">Нижній ряд не можна міняти</div>
-          <div class="effect-timer" id="eff-timer-frozen_row">10 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-frozen_row" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('frozen_row',10)">Купити</button>
+          <input class="effect-buy-input" id="eff-minutes-bomb_mode" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('bomb_mode',15)">Купити</button>
         </div>
       </div>
       <div class="shop-item" id="eff-chain_reaction">
@@ -615,16 +530,52 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn btn-small btn-primary" onclick="buyEffect('chain_reaction',12)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" id="eff-peek">
-        <div class="shop-icon">👀</div>
+      <div class="shop-item" id="eff-gold_rush">
+        <div class="shop-icon">💰</div>
         <div class="shop-info">
-          <div class="shop-name">Peek</div>
-          <div class="shop-desc">Показати наступні 3 камінці</div>
-          <div class="effect-timer" id="eff-timer-peek">5 🪙/хв · Неактивно</div>
+          <div class="shop-name">Gold Rush</div>
+          <div class="shop-desc">×2 золота за кожен збіг</div>
+          <div class="effect-timer" id="eff-timer-gold_rush">10 🪙/хв · Неактивно</div>
         </div>
         <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-peek" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('peek',5)">Купити</button>
+          <input class="effect-buy-input" id="eff-minutes-gold_rush" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('gold_rush',10)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-wild_swap">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">Wild Swap</div>
+          <div class="shop-desc">Можна міняти будь-які камінці</div>
+          <div class="effect-timer" id="eff-timer-wild_swap">8 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-wild_swap" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('wild_swap',8)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-x_ray">
+        <div class="shop-icon">👁</div>
+        <div class="shop-info">
+          <div class="shop-name">X-Ray</div>
+          <div class="shop-desc">Показати наступні камінці</div>
+          <div class="effect-timer" id="eff-timer-x_ray">6 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-x_ray" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('x_ray',6)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-lucky_match">
+        <div class="shop-icon">🎯</div>
+        <div class="shop-info">
+          <div class="shop-name">Lucky Match</div>
+          <div class="shop-desc">Підсвітити можливий збіг</div>
+          <div class="effect-timer" id="eff-timer-lucky_match">7 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-lucky_match" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('lucky_match',7)">Купити</button>
         </div>
       </div>
     </div>
@@ -666,6 +617,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           Покупки в магазині з'являться тут
         </div>
       </div>
+      <div id="duel-list" style="margin-top:8px"></div>
+      <div id="duel-status" style="margin-top:8px"></div>
     </div>
 
     <!-- Section 3: Inventory — My Skins -->
@@ -847,6 +800,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <button class="nav-btn" data-screen="chat" onclick="showScreen('chat')">
       <span class="icon">💬</span> Чат
     </button>
+    <button class="nav-btn" data-screen="profile" onclick="showScreen('profile')">
+      <span class="icon">👤</span> Профіль
+    </button>
   </nav>
 </div>
 
@@ -856,7 +812,7 @@ const DEFAULT_SAVE = {
   resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
   inventory: {skins:[], canvases:[], owned_achievements:[]},
   equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
-  achievements: {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false},
+  achievements: {combo:false},
   market_listings: [],
   stats: {matches:0, earned:0, record:0, skins_created:0, skins_sold:0},
   chat: [],
@@ -865,7 +821,9 @@ const DEFAULT_SAVE = {
   active_effects: {},
   player: {id:null, name:'Гравець', email:'', created:null},
   github: {token:'', repo:'', connected:false},
-  board_skins: {bg: null, frame: null}
+  board_skin: null,
+  board_skin_equipped: false,
+  sold_listings: []
 };
 
 function loadSave(){
@@ -903,12 +861,12 @@ function loadSave(){
       // Convert old achievements array to new object format
       if(Array.isArray(data.achievements)){
         const oldAch = data.achievements;
-        data.achievements = {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false};
+        data.achievements = {combo:false};
         for(const a of oldAch){
           if(a in data.achievements) data.achievements[a] = true;
         }
       }else if(typeof data.achievements !== 'object' || !data.achievements){
-        data.achievements = {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false};
+        data.achievements = {combo:false};
       }
       if(!Array.isArray(data.market_listings)) data.market_listings = [];
       // Generate player ID if missing
@@ -942,8 +900,8 @@ function toast(msg){
 
 function updateUI(){
   const r = SAVE.resources;
-  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','dash-gold','dash-ruby','dash-sapphire','shop-gold'];
-  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold];
+  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','shop-gold','shop-ruby','shop-sapphire','game-gold','game-ruby','game-sapphire'];
+  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire];
   for(let i=0;i<ids.length;i++){
     const el = document.getElementById(ids[i]);
     if(el) el.textContent = vals[i];
@@ -1004,14 +962,20 @@ function selectMiner(id){
 }
 
 // ===== SCREEN NAV =====
-async function showScreen(id){
+function showScreen(id){
+  try {
   // Chat polling lifecycle
   if(id==='chat') {
-    await loadChatFromGitHub();
-    renderChat();
-    startChatPolling();
+    loadChatFromGitHub().then(()=>{renderChat();startChatPolling();});
   }
   else stopChatPolling();
+  // Duel invite checking when viewing achievements
+  if(id==='achieve'){
+    checkDuelInvites();
+    startDuelCheck();
+  }else{
+    stopDuelCheck();
+  }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const screen = document.getElementById('screen-'+id);
   if(screen) screen.classList.add('active');
@@ -1029,6 +993,7 @@ async function showScreen(id){
     selectMiner(selectedMiner);
   }
   updateUI();
+  } catch(e) { console.error('showScreen error:', e); }
 }
 
 function setEditorTool(tool){
@@ -1045,13 +1010,10 @@ const BOARD_SIZE = 8;
 let board = [];
 let selectedCell = null;
 let score = 0;
-let movesLeft = 30;
 let isAnimating = false;
 let gameOver = false;
-
-function getMaxMoves(){
-  return 30 + (SAVE.inventory.owned_achievements.includes('extra_moves')?5:0);
-}
+let speedTimerInterval = null;
+let speedTimeLeft = 0;
 
 function getComboMultiplier(){
   return SAVE.inventory.owned_achievements.includes('combo')?2:1;
@@ -1069,7 +1031,6 @@ function startMatch3(){
   gameOver = false;
   isAnimating = false;
   selectedCell = null;
-  movesLeft = getMaxMoves();
   score = 0;
   board = [];
   for(let r=0;r<BOARD_SIZE;r++){
@@ -1085,6 +1046,21 @@ function startMatch3(){
     for(const [r,c] of matches) board[r][c]=Math.floor(Math.random()*GEM_TYPES);
   }
   document.getElementById('m3-result').classList.add('hidden');
+  // Speed Mode: start countdown timer
+  if(speedTimerInterval) clearInterval(speedTimerInterval);
+  speedTimerInterval = null;
+  if(isEffectActive('speed_mode')){
+    speedTimeLeft = 120; // 120 seconds
+    speedTimerInterval = setInterval(()=>{
+      speedTimeLeft--;
+      if(speedTimeLeft <= 0){
+        clearInterval(speedTimerInterval);
+        speedTimerInterval = null;
+        endMatch3();
+      }
+      updateM3UI();
+    }, 1000);
+  }
   renderBoard();
   updateM3UI();
 }
@@ -1094,13 +1070,14 @@ function renderBoard(){
   container.innerHTML='';
   const style = calcGridSize();
   container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
+  container.style.gridTemplateRows=`repeat(${BOARD_SIZE},${style}px)`;
   
   // Apply board skin: background
-  const bs = SAVE.board_skins || {};
-  if(bs.bg && bs.bg.pixels && bs.bg.pixels.some(p=>p!==null)){
-    const bgUrl = renderPixelsToDataUrl(bs.bg.pixels, bs.bg.size || 32);
+  const boardSkin = SAVE.board_skin || null;
+  if(boardSkin && boardSkin.pixels && SAVE.board_skin_equipped){
+    const bgUrl = renderPixelsToDataUrl(boardSkin.pixels, boardSkin.size || 32);
     container.style.backgroundImage = 'url('+bgUrl+')';
-    container.style.backgroundSize = '100% 100%';
+    container.style.backgroundSize = 'cover';
     container.style.backgroundPosition = 'center';
     container.style.backgroundRepeat = 'no-repeat';
   }else{
@@ -1108,27 +1085,25 @@ function renderBoard(){
     container.style.backgroundSize = '';
     container.style.backgroundRepeat = '';
   }
-  
-  // Apply board skin: frame
-  if(bs.frame && bs.frame.pixels && bs.frame.pixels.some(p=>p!==null)){
-    const frameUrl = renderPixelsToDataUrl(bs.frame.pixels, bs.frame.size || 32);
-    container.style.borderImage = 'url('+frameUrl+') 4 fill stretch';
-    container.style.borderWidth = '6px';
-    container.style.borderStyle = 'solid';
-  }else{
-    container.style.borderImage = '';
-    container.style.borderWidth = '2px';
-    container.style.borderStyle = 'solid';
-    container.style.borderColor = 'var(--surface)';
-  }
+
+  // Reset border
+  container.style.borderImage = '';
+  container.style.borderWidth = '2px';
+  container.style.borderStyle = 'solid';
+  container.style.borderColor = 'var(--surface)';
   
   const gemGlowActive = isEffectActive('gem_glow');
+  const invisibleActive = isEffectActive('invisible_gems');
   for(let r=0;r<BOARD_SIZE;r++){
     for(let c=0;c<BOARD_SIZE;c++){
       const cell = document.createElement('div');
       cell.className='m3-cell';
       const gt = board[r][c];
       if(isGemBw(gt)) cell.classList.add('bw');
+      // Invisible Gems: hide gem content unless cell is selected
+      if(invisibleActive && !(selectedCell && selectedCell[0]===r && selectedCell[1]===c)){
+        cell.style.opacity = '0.15';
+      }
       cell.dataset.r=r;
       cell.dataset.c=c;
       const gem = document.createElement('div');
@@ -1177,20 +1152,44 @@ function renderBoard(){
       container.appendChild(cell);
     }
   }
+  // X-Ray: show preview of next gems
+  showXRayPreview();
+  // Lucky Match: highlight a random possible match
+  highlightLuckyMatch();
 }
 
 function calcGridSize(){
   const wrap = document.getElementById('m3-board-wrap');
-  const w = wrap.clientWidth-24;
-  const h = wrap.clientHeight-24;
-  const maxSize = Math.min(Math.floor(w/BOARD_SIZE), Math.floor(h/BOARD_SIZE), 52);
-  return Math.max(28, Math.min(maxSize, 52));
+  // Enforce square: height = width
+  wrap.style.height = wrap.offsetWidth + 'px';
+  const board = document.getElementById('m3-board');
+  const availW = wrap.clientWidth-24;
+  const availH = wrap.clientHeight-24;
+  // Account for board padding (2*10px), border (2*2px), and gaps (7*4px)
+  const boardPadding = 20; // 2 * 10px padding
+  const boardBorder = 4;   // 2 * 2px border
+  const totalGaps = (BOARD_SIZE - 1) * 4; // 7 gaps * 4px
+  const availableForCells = Math.max(0, availW - boardPadding - boardBorder - totalGaps);
+  const maxCell = Math.min(Math.floor(availableForCells / BOARD_SIZE), 52);
+  const cellSize = Math.max(28, Math.min(maxCell, 52));
+  return cellSize;
 }
 
 function updateM3UI(){
   document.getElementById('m3-score').textContent=score;
-  document.getElementById('m3-moves').textContent=movesLeft;
   document.getElementById('m3-highscore').textContent=SAVE.stats.record;
+  // Speed Mode timer display
+  const speedEl = document.getElementById('m3-speed-timer');
+  if(speedEl){
+    if(isEffectActive('speed_mode') && speedTimerInterval){
+      const mins = Math.floor(speedTimeLeft / 60);
+      const secs = speedTimeLeft % 60;
+      speedEl.textContent = '⏱ '+mins+':'+(secs<10?'0':'')+secs;
+      speedEl.style.display = '';
+    } else {
+      speedEl.style.display = 'none';
+    }
+  }
 }
 
 function onCellClick(r,c){
@@ -1206,10 +1205,11 @@ function onCellClick(r,c){
     renderBoard();
     return;
   }
-  // Check adjacency
+  // Check adjacency (or Wild Swap allows any swap)
+  const isWildSwap = isEffectActive('wild_swap');
   const dr = Math.abs(sr-r);
   const dc = Math.abs(sc-c);
-  if((dr===1 && dc===0) || (dr===0 && dc===1)){
+  if(isWildSwap || (dr===1 && dc===0) || (dr===0 && dc===1)){
     // Swap
     selectedCell=null;
     trySwap(sr,sc,r,c);
@@ -1227,7 +1227,6 @@ function trySwap(r1,c1,r2,c2){
 
   const matches = findAllMatches();
   if(matches.length){
-    movesLeft--;
     processMatches(matches, 1);
   }else{
     // Swap back
@@ -1269,10 +1268,91 @@ function processMatches(matches, comboLevel){
   let points = matches.length * 10 * comboLevel * multi;
   score += points;
 
+  // === Нова економіка ===
+  const baseGold = 1;
+  const matchBonus = Math.floor(SAVE.stats.matches / 20); // +1 gold every 20 matches
+  const comboBonus = comboLevel - 1; // 0 at first cascade, +1 at second, etc.
+  const matchSizeBonus = Math.floor(matches.length / 3) - 1; // 3=+0, 4=+1, 5=+2
+  let goldEarned = baseGold + matchBonus + comboBonus + matchSizeBonus;
+  if(goldEarned < 1) goldEarned = 1;
+  
+  // Gold Rush: ×2 gold
+  if(isEffectActive('gold_rush')){
+    goldEarned *= 2;
+  }
+
+  // Duel: track 10-move battle
+  if(SAVE.duel && SAVE.duel.stage === 'playing'){
+    handleDuelMove(points);
+  }
+
+  SAVE.resources.gold += goldEarned;
+
+  let rubyEarned = 0, sapphireEarned = 0;
+  if(Math.random() < 0.02 + SAVE.stats.matches * 0.0005){ SAVE.resources.ruby++; rubyEarned = 1; }
+  if(Math.random() < 0.03 + SAVE.stats.matches * 0.0005){ SAVE.resources.sapphire++; sapphireEarned = 1; }
+
+  saveToDisk();
+  updateUI();
+
+  // Toast for each cascade — but short-lived, doesn't block
+  let msg = '🪙 +'+goldEarned+' Gold';
+  if(rubyEarned>0) msg += ' 💎 +'+rubyEarned;
+  if(sapphireEarned>0) msg += ' 🟡 +'+sapphireEarned;
+  if(comboLevel > 1) msg = '⚡ Combo x'+comboLevel+' '+msg;
+  toast(msg);
+  // === Кінець економіки ===
+
   // Remove matched gems
   for(const [r,c] of matches){
     board[r][c] = -1; // Mark as removed
   }
+
+  // Chain Reaction: blow up adjacent cells
+  if(isEffectActive('chain_reaction') && matches.length >= 1){
+    const allAffected = new Set();
+    for(const [r,c] of matches){
+      for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+        const nr = r+dr, nc = c+dc;
+        if(nr>=0 && nr<BOARD_SIZE && nc>=0 && nc<BOARD_SIZE && board[nr][nc] !== -1){
+          allAffected.add(nr+','+nc);
+          board[nr][nc] = -1;
+        }
+      }
+    }
+    if(allAffected.size > 0){
+      goldEarned += allAffected.size * 5;
+      SAVE.resources.gold += allAffected.size * 5;
+      msg = '🔥 Chain! +'+allAffected.size*5+' Gold';
+      toast(msg);
+    }
+  }
+
+  // Bomb Mode: explosion around matched cells
+  if(isEffectActive('bomb_mode') && matches.length >= 1){
+    const bombSet = new Set();
+    for(const [r,c] of matches){
+      for(let dr=-1;dr<=1;dr++){
+        for(let dc=-1;dc<=1;dc++){
+          if(dr===0 && dc===0) continue;
+          const nr = r+dr, nc = c+dc;
+          if(nr>=0 && nr<BOARD_SIZE && nc>=0 && nc<BOARD_SIZE && board[nr][nc] !== -1){
+            bombSet.add(nr+','+nc);
+            board[nr][nc] = -1;
+          }
+        }
+      }
+    }
+    if(bombSet.size > 0){
+      goldEarned += bombSet.size * 3;
+      SAVE.resources.gold += bombSet.size * 3;
+      msg = '💥 Boom! +'+bombSet.size*3+' Gold';
+      toast(msg);
+    }
+  }
+
+  saveToDisk();
+  updateUI();
 
   // Visual feedback
   renderBoard();
@@ -1331,21 +1411,19 @@ function applyGravity(){
 }
 
 function checkGameOver(){
-  if(movesLeft<=0){
-    gameOver=true;
-    endMatch3();
-  }
+  // Game never ends — unlimited play
   updateM3UI();
 }
 
 function endMatch3(){
+  // Stop speed timer if active
+  if(speedTimerInterval){
+    clearInterval(speedTimerInterval);
+    speedTimerInterval = null;
+  }
   // Rewards
   const goldEarned = Math.floor(score / 10);
-  let rubyEarned = 0;
-  if(Math.random() < 0.01) rubyEarned = 1;
-
   SAVE.resources.gold += goldEarned;
-  SAVE.resources.ruby += rubyEarned;
   SAVE.stats.matches++;
   SAVE.stats.earned += goldEarned;
   if(score > SAVE.stats.record) SAVE.stats.record = score;
@@ -1354,9 +1432,25 @@ function endMatch3(){
 
   // Show result
   document.getElementById('m3-final-score').textContent = score;
-  document.getElementById('m3-rewards').innerHTML = `🪙 +${goldEarned} Gold &nbsp; 💎 +${rubyEarned>0?'1 Ruby':'0 Ruby'}`;
+  document.getElementById('m3-rewards').innerHTML = `🪙 +${goldEarned} Gold`;
   document.getElementById('m3-result').classList.remove('hidden');
 }
+
+// ===== EFFECTS & RULES SYSTEM =====
+const EFFECTS_DEF = {
+  gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
+  particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
+  screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
+  gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
+  speed_mode: {name:'Speed Mode', icon:'⚡', type:'rule', price_per_min:8, desc:'Зворотній таймер'},
+  invisible_gems: {name:'Invisible Gems', icon:'👻', type:'rule', price_per_min:12, desc:'Камінці невидимі до наведення'},
+  bomb_mode: {name:'Bomb Mode', icon:'💥', type:'rule', price_per_min:15, desc:'Збіг створює вибух навколо'},
+  chain_reaction: {name:'Chain Reaction', icon:'🔥', type:'rule', price_per_min:12, desc:'Кожен збіг вибухає сусідні'},
+  gold_rush: {name:'Gold Rush', icon:'💰', type:'rule', price_per_min:10, desc:'×2 золота за кожен збіг'},
+  wild_swap: {name:'Wild Swap', icon:'🔄', type:'rule', price_per_min:8, desc:'Можна міняти будь-які камінці'},
+  x_ray: {name:'X-Ray', icon:'👁', type:'rule', price_per_min:6, desc:'Показати наступні камінці'},
+  lucky_match: {name:'Lucky Match', icon:'🎯', type:'rule', price_per_min:7, desc:'Підсвітити можливий збіг'},
+};
 
 // ===== SYSTEM PACKS (набори ефектів/правил) =====
 const SYSTEM_PACKS = {
@@ -1374,8 +1468,8 @@ const SYSTEM_PACKS = {
     name: 'Візуальний',
     icon: '✨',
     price: 20,
-    desc: 'Gem Glow + Star Burst + Rainbow Trail на 30 хв',
-    effects: ['gem_glow', 'star_burst', 'rainbow_trail'],
+    desc: 'Gem Glow + Particle Trail + Screen Pulse на 30 хв',
+    effects: ['gem_glow', 'particle_trail', 'screen_pulse'],
     duration: 30
   },
   chaos: {
@@ -1383,8 +1477,8 @@ const SYSTEM_PACKS = {
     name: 'Хаос',
     icon: '🌀',
     price: 40,
-    desc: 'Invisible Gems + Random Swap + Frozen Row на 20 хв',
-    effects: ['invisible_gems', 'random_swap', 'frozen_row'],
+    desc: 'Gold Rush + Wild Swap + X-Ray на 20 хв',
+    effects: ['gold_rush', 'wild_swap', 'x_ray'],
     duration: 20
   }
 };
@@ -1424,6 +1518,7 @@ function buyPack(packId){
   updateUI();
   updatePacksList();
   updateEffectsUI();
+  refreshGameSkins();
   toast('✅ Пак "'+pack.name+'" придбано! Ефекти активовано на '+pack.duration+' хв.');
 }
 
@@ -1453,6 +1548,7 @@ function applyPack(packId){
   saveToDisk();
   updateUI();
   updateEffectsUI();
+  refreshGameSkins();
   toast('✅ Пак "'+pack.name+'" активовано! Ефекти подовжено на '+pack.duration+' хв.');
 }
 
@@ -1537,9 +1633,9 @@ const CANVAS_TYPES = {
 // ===== SHOP FUNCTIONS =====
 
 function buyAchievement(id){
-  const prices = {extra_moves:15, combo:30, extra_swap:20, lucky_start:15, shield:25, time_bonus:20, target_lock:30};
-  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
-  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
+  const prices = {combo:30, duel:50};
+  const names = {combo:'Комбо-множник ×2', duel:'🎯 Дуель'};
+  const icons = {combo:'💥', duel:'🎯'};
   const price = prices[id];
   if(!price){ toast('❌ Невідома ачівка'); return; }
   if(SAVE.inventory.owned_achievements.includes(id) || SAVE.achievements[id]){
@@ -1563,25 +1659,378 @@ function updateAchieveList(){
   const container = document.getElementById('ach-list');
   if(!container) return;
   const owned = SAVE.inventory.owned_achievements || [];
-  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
-  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
-  const descs = {extra_moves:'+5 ходів у Match-3', combo:'×2 бали за комбо', extra_swap:'Можна міняти не тільки сусідні', lucky_start:'Старт з 2 випадковими ходами', shield:'Один невдалий хід без втрати', time_bonus:'+30 сек в Speed Mode', target_lock:'Показати найкращий камінець'};
-  if(!owned.length){
+  const names = {combo:'Комбо-множник ×2', duel:'🎯 Дуель'};
+  const icons = {combo:'💥', duel:'🎯'};
+  const descs = {combo:'×2 бали за комбо', duel:'Змагайся з іншими гравцями'};
+
+  // Show active effects with deactivate button
+  let activeHtml = '';
+  for(const id in SAVE.active_effects){
+    if(!isEffectActive(id)) continue;
+    const def = EFFECTS_DEF[id];
+    if(!def) continue;
+    const remaining = Math.max(0, Math.floor((SAVE.active_effects[id].expires_at - Date.now()) / 1000));
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    activeHtml += `<div class="ach-item owned" style="border-color:var(--green)">
+      <span class="ach-icon">${def.icon}</span>
+      <div class="ach-info">
+        <div class="ach-name">${def.name}</div>
+        <div class="ach-desc" style="color:var(--green)">✅ Активно: ${mins}:${secs<10?'0':''}${secs}</div>
+      </div>
+      <button class="btn btn-small btn-danger" onclick="deactivateEffect('${id}')" style="padding:4px 8px;font-size:11px">⏹ Викл</button>
+    </div>`;
+  }
+
+  if(!owned.length && !activeHtml){
     container.innerHTML='<div class="empty-state"><span class="icon">🏆</span>Купіть ачівки в магазині</div>';
     return;
   }
-  let html='';
+  let html = activeHtml;
   for(const id of owned){
+    const extraBtn = (id==='duel') ? `<button class="btn btn-small btn-gold" onclick="startDuel()" style="padding:4px 8px;font-size:11px">🎯 Грати</button>` : '';
     html+=`<div class="ach-item owned">
       <span class="ach-icon">${icons[id]||'🏆'}</span>
       <div class="ach-info">
         <div class="ach-name">${names[id]||id}</div>
         <div class="ach-desc">${descs[id]||''}</div>
       </div>
-      <span class="ach-buy">✅</span>
+      ${extraBtn || '<span class="ach-buy">✅</span>'}
     </div>`;
   }
   container.innerHTML=html;
+}
+
+// ===== DUEL / 10-MOVE BATTLE =====
+const DUEL_PATH = 'data/duel_invites.json';
+let duelCheckInterval = null;
+
+function getDuelStatus(){
+  if(!SAVE.duel) return null;
+  const d = SAVE.duel;
+  if(!d.active) return null;
+  if(d.stage === 'playing') return {moves:d.moves, max:d.max_moves, score:d.score, opp:d.opponent, oppStatus:d.opp_status||'waiting'};
+  if(d.stage === 'done') return {done:true, score:d.score, opp:d.opponent, oppStatus:d.opp_status||'waiting'};
+  return null;
+}
+
+async function startDuel(){
+  const owned=SAVE.inventory.owned_achievements||[];
+  if(!owned.includes('duel')&&!SAVE.achievements.duel){
+    toast('❌ Спочатку придбайте ачівку "Дуель" в магазині'); return;
+  }
+  if(SAVE.duel && SAVE.duel.active){
+    toast('ℹ️ Дуель вже активна!'); return;
+  }
+  // Auto-register player
+  const name = GITHUB_USER;
+  await registerPlayer(name);
+  const players=await getPlayers();
+  if(!players.length){ toast('❌ Немає інших гравців. Запросіть друга купити ачівку "Дуель" і ввести своє ім\'я в профілі'); return; }
+  let html='<div class="card"><div class="card-title">🎯 Оберіть суперника на 10 ходів</div>';
+  for(const p of players){
+    html+=`<div class="duel-player" onclick="sendDuelInvite('${p}')"><span>${p}</span><button class="btn btn-small btn-gold">🎯 Викликати</button></div>`;
+  }
+  html+='</div>';
+  const c=document.getElementById('duel-list');
+  if(c) c.innerHTML=html;
+}
+
+async function getPlayers(){
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return []; const d=await r.json(); const p=JSON.parse(decodeURIComponent(escape(atob(d.content))));
+    return p.filter(x=>x!==GITHUB_USER);
+  }catch(e){return [];}
+}
+
+async function registerPlayer(name){
+  if(!name || name === GITHUB_OWNER) return;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok){
+      const payload={content:btoa(unescape(encodeURIComponent(JSON.stringify([name])))),message:'add player'};
+      await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+        method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+        body:JSON.stringify(payload)
+      });
+      return;
+    }
+    const d=await r.json();
+    const players=JSON.parse(decodeURIComponent(escape(atob(d.content))));
+    if(players.includes(name)) return;
+    players.push(name);
+    const sha=d.sha;
+    const payload={content:btoa(unescape(encodeURIComponent(JSON.stringify(players)))),message:'add player '+name,sha};
+    await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+      method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+      body:JSON.stringify(payload)
+    });
+  }catch(e){console.log('register error:',e);}
+}
+
+async function loadInvites(){
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return []; const d=await r.json(); return JSON.parse(decodeURIComponent(escape(atob(d.content))));
+  }catch(e){return [];}
+}
+
+async function saveInvites(list, sha){
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(list))));
+  const payload={content,message:'duel update'};
+  if(sha) payload.sha=sha;
+  const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+    method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+    body:JSON.stringify(payload)
+  });
+  return r.ok ? (await r.json()).content.sha : null;
+}
+
+async function sendDuelInvite(target){
+  try{
+    const invites=await loadInvites();
+    // Get sha for update
+    const getR=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    const sha=getR.ok ? (await getR.json()).sha : null;
+    const id='d_'+Date.now();
+    invites.push({id,from:GITHUB_USER,to:target,status:'pending',ts:Date.now()});
+    await saveInvites(invites, sha);
+    toast('✅ Запрошення надіслано '+target);
+  }catch(e){toast('❌ '+e.message);}
+}
+
+async function checkDuelInvites(){
+  const invites=await loadInvites();
+  // Check pending invites for us
+  const pending=invites.find(i=>i.to===GITHUB_USER && i.status==='pending');
+  if(pending){
+    if(!confirm('🎯 '+pending.from+' викликає вас на дуель (10 ходів)! Прийняти?')) return;
+    await acceptDuel(pending, invites);
+  }
+  // Check if our sent invite was accepted
+  const accepted=invites.find(i=>i.from===GITHUB_USER && i.status==='playing' && !i.starter_notified);
+  if(accepted){
+    if(!confirm('🎯 '+accepted.to+' прийняв вашу дуель! Почати бій на 10 ходів?')) return;
+    accepted.starter_notified=true;
+    // Get sha for update
+    const getR2=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    const sha2=getR2.ok ? (await getR2.json()).sha : null;
+    await saveInvites(invites, sha2);
+    SAVE.duel={active:true, opponent:accepted.to, invite_id:accepted.id, moves:0, max_moves:10, score:0, stage:'playing', opp_status:'playing'};
+    saveToDisk();
+    updateDuelBar();
+    showScreen('match3');
+    startMatch3();
+    startDuelPolling();
+  }
+  // Check if our opponent finished and we haven't checked
+  if(SAVE.duel && SAVE.duel.active){
+    const our=invites.find(i=>i.id===SAVE.duel.invite_id);
+    if(our){
+      if(our.opponent_score !== undefined && SAVE.duel.stage === 'done' && !SAVE.duel.opponent_score){
+        SAVE.duel.opponent_score = our.opponent_score;
+        SAVE.duel.opp_status = 'done';
+        // Determine winner locally
+        SAVE.duel.stage='finished';
+        const total=SAVE.duel.score+(SAVE.duel.opponent_score||0);
+        const bonus=Math.max(10, Math.floor(total/10));
+        if(SAVE.duel.score > SAVE.duel.opponent_score){
+          SAVE.duel.winner=GITHUB_USER;
+          SAVE.resources.gold += Math.floor(total/15)+5;
+        }else if(SAVE.duel.score < SAVE.duel.opponent_score){
+          SAVE.duel.winner=SAVE.duel.opponent;
+          SAVE.resources.gold += Math.floor(total/20)+2;
+        }else{
+          SAVE.duel.winner='draw';
+          SAVE.resources.gold += Math.floor(total/20);
+        }
+        saveToDisk();
+        showDuelResult();
+      }
+      if(our.status === 'finished' && SAVE.duel.stage !== 'finished'){
+        SAVE.duel.stage = 'finished';
+        SAVE.duel.winner = our.winner;
+        saveToDisk();
+        showDuelResult();
+      }
+    }
+  }
+}
+
+async function acceptDuel(invite, invites){
+  // Get sha
+  const getR=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+    headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+  });
+  const sha=getR.ok ? (await getR.json()).sha : null;
+  invite.status='playing';
+  invite.accepted_ts=Date.now();
+  const idx=invites.findIndex(i=>i.id===invite.id);
+  if(idx>=0) invites[idx]=invite;
+  await saveInvites(invites, sha);
+  SAVE.duel={active:true, opponent:invite.from, invite_id:invite.id, moves:0, max_moves:10, score:0, stage:'playing', opp_status:'waiting'};
+  saveToDisk();
+  toast('🎯 Дуель розпочато! Зробіть 10 ходів');
+  updateDuelBar();
+  showScreen('match3');
+  startMatch3();
+  startDuelPolling();
+}
+
+function handleDuelMove(points){
+  if(!SAVE.duel || SAVE.duel.stage !== 'playing') return;
+  SAVE.duel.moves++;
+  SAVE.duel.score += points;
+  if(SAVE.duel.moves >= 10){
+    SAVE.duel.stage='done';
+    saveToDisk();
+    finishDuel();
+  }else{
+    saveToDisk();
+  }
+  updateDuelBar();
+}
+
+async function finishDuel(){
+  const invites=await loadInvites();
+  const getR=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+    headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+  });
+  const sha=getR.ok ? (await getR.json()).sha : null;
+  const invite=invites.find(i=>i.id===SAVE.duel.invite_id);
+  if(invite){
+    invite.player_score=SAVE.duel.score;
+    invite.player=GITHUB_USER;
+    invite.player_moves=SAVE.duel.moves;
+    // If opponent already finished
+    if(invite.opponent_score !== undefined){
+      invite.status='finished';
+      invite.winner = invite.player_score > invite.opponent_score ? GITHUB_USER : (invite.player_score < invite.opponent_score ? invite.opponent : 'draw');
+      // Calculate bonuses
+      const bonusTotal=Math.max(10, Math.floor((invite.player_score + invite.opponent_score) / 10));
+      invite.bonus_total=bonusTotal;
+      if(invite.winner==='draw'){
+        invite.bonus_winner=Math.floor(bonusTotal/2);
+        invite.bonus_loser=Math.floor(bonusTotal/2);
+      }else if(invite.winner===invite.player){
+        invite.bonus_winner=Math.floor(bonusTotal*0.6);
+        invite.bonus_loser=Math.floor(bonusTotal*0.4);
+      }else{
+        invite.bonus_winner=Math.floor(bonusTotal*0.6);
+        invite.bonus_loser=Math.floor(bonusTotal*0.4);
+      }
+      SAVE.duel.stage='finished';
+      SAVE.duel.winner=invite.winner;
+    }else{
+      invite.status='done_'+GITHUB_USER;
+      invite.opponent_score=0; // placeholder, will be set by opponent
+    }
+  }
+  await saveInvites(invites, sha);
+  saveToDisk();
+  toast('🎯 Ви завершили дуель! Рахунок: '+SAVE.duel.score);
+  if(SAVE.duel.stage==='finished') showDuelResult();
+  else toast('⏳ Чекаємо результату суперника...');
+  stopDuelPolling();
+}
+
+function showDuelResult(){
+  const d=SAVE.duel;
+  if(!d||!d.winner) return;
+  let bonus=0;
+  if(d.winner==='draw'){
+    bonus=Math.floor((d.score+d.opponent_score)/20);
+    toast('🤝 НІЧИЯ! Ваш рахунок: '+d.score+' vs '+d.opponent_score+' 🪙 +'+bonus);
+  }else if(d.winner===GITHUB_USER){
+    bonus=Math.floor((d.score+d.opponent_score)/15)+5;
+    toast('🏆 ПЕРЕМОГА! '+d.score+' vs '+d.opponent_score+' 🪙 +'+bonus);
+  }else{
+    bonus=Math.floor((d.score+d.opponent_score)/20)+2;
+    toast('😢 Поразка... '+d.score+' vs '+d.opponent_score+' 🪙 +'+bonus);
+  }
+  SAVE.resources.gold += bonus;
+  SAVE.duel.active=false;
+  SAVE.duel.stage='finished';
+  saveToDisk();
+  updateDuelBar();
+  updateUI();
+}
+
+function updateDuelUI(){
+  const el=document.getElementById('duel-status');
+  if(!el) return;
+  updateDuelBar();
+  // Also update achieve screen
+  if(SAVE.duel && SAVE.duel.active){
+    const d=SAVE.duel;
+    if(d.stage==='playing'){
+      el.innerHTML=`<div class="card" style="border-color:var(--gold)"><div class="card-title">🎯 Дуель з ${d.opponent}</div>
+      <div style="display:flex;gap:16px;font-size:14px">
+        <span>Ходи: ${d.moves}/${d.max_moves}</span>
+        <span style="color:var(--gold)">Рахунок: ${d.score}</span>
+        <span>Суперник: ${d.opp_status==='done'?'✅ завершив':'⏳ грає'}</span>
+      </div></div>`;
+    }else if(d.stage==='done'){
+      el.innerHTML=`<div class="card" style="border-color:var(--blue)"><div class="card-title">⏳ Чекаємо суперника...</div>
+      <div style="font-size:14px">Ваш рахунок: ${d.score} | Суперник: ${d.opp_status==='done'?'✅ готовий':'⏳ грає'}</div></div>`;
+    }
+  }else{
+    el.innerHTML='';
+  }
+}
+
+function updateDuelBar(){
+  const bar=document.getElementById('duel-bar');
+  const text=document.getElementById('duel-bar-text');
+  if(!bar||!text) return;
+  if(SAVE.duel&&SAVE.duel.active){
+    bar.style.display='block';
+    const d=SAVE.duel;
+    if(d.stage==='playing'){
+      text.textContent=`${d.opponent} · Залишилось ходів: ${d.max_moves-d.moves}/${d.max_moves} · Бали: ${d.score}`;
+      bar.style.background='var(--gold)';
+      bar.style.color='#000';
+    }else if(d.stage==='done'){
+      text.textContent=`${d.opponent} · Завершено: ${d.score} балів · Чекаємо суперника`;
+      bar.style.background='var(--blue)';
+      bar.style.color='#fff';
+    }else{
+      text.textContent=`${d.opponent} · ${d.winner===GITHUB_USER?'🏆 Перемога!':d.winner==='draw'?'🤝 Нічия':'😢 Поразка'}`;
+      bar.style.background=d.winner===GITHUB_USER?'var(--green)':'var(--red)';
+      bar.style.color='#fff';
+    }
+  }else{
+    bar.style.display='none';
+  }
+}
+
+function startDuelPolling(){
+  stopDuelPolling();
+  duelCheckInterval = setInterval(()=>{checkDuelInvites();updateDuelUI();}, 5000);
+}
+
+function stopDuelPolling(){
+  if(duelCheckInterval){ clearInterval(duelCheckInterval); duelCheckInterval=null; }
+}
+
+let duelInviteCheckInterval = null;
+function startDuelCheck(){
+  stopDuelCheck();
+  duelInviteCheckInterval = setInterval(()=>{checkDuelInvites();}, 10000);
+}
+function stopDuelCheck(){
+  if(duelInviteCheckInterval){ clearInterval(duelInviteCheckInterval); duelInviteCheckInterval=null; }
 }
 
 // ===== CANVAS SHOP =====
@@ -1618,13 +2067,8 @@ function buyCanvas(type){
 
 // ===== BOARD CANVAS SHOP =====
 function buyBoardCanvas(skinType){
-  if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
-  const defs = {
-    board_bg: {name:'Board BG Canvas', icon:'🖼', price:25, size:32},
-    board_frame: {name:'Board Frame Canvas', icon:'⊞', price:25, size:32}
-  };
-  const def = defs[skinType];
-  if(!def){ toast('❌ Невідомий тип'); return; }
+  if(!SAVE.board_skin) SAVE.board_skin = null;
+  const def = {name:'Board Canvas', icon:'🖼', price:25, size:32};
   if(SAVE.resources.gold < def.price){
     toast('❌ Недостатньо Gold! Потрібно '+def.price+' 🪙');
     return;
@@ -1633,32 +2077,9 @@ function buyBoardCanvas(skinType){
   saveToDisk();
   updateUI();
   if(confirm('✅ '+def.name+' придбано! Відкрити редактор?')){
-    openBoardSkinEditor(skinType);
+    openBoardSkinEditor();
   }
 }
-
-function layerLabel(layer){
-  return layer==='gem' ? '🎨 Камінець' : layer==='bg' ? '🖼 Фон' : layer==='frame' ? '⊞ Рамка' : layer;
-}
-
-// ===== EFFECTS & RULES SYSTEM =====
-const EFFECTS_DEF = {
-  gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
-  star_burst: {name:'Star Burst', icon:'💫', type:'visual', price_per_min:4, desc:'Зірки при збігу'},
-  rainbow_trail: {name:'Rainbow Trail', icon:'🌈', type:'visual', price_per_min:6, desc:'Райдужний слід за курсором'},
-  sound_ping: {name:'Sound Ping', icon:'🎵', type:'visual', price_per_min:3, desc:'Візуальна імітація звукового сигналу при збігу'},
-  particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
-  screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
-  gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
-  speed_mode: {name:'Speed Mode', icon:'⚡', type:'rule', price_per_min:8, desc:'Зворотній таймер'},
-  invisible_gems: {name:'Invisible Gems', icon:'👻', type:'rule', price_per_min:12, desc:'Камінці невидимі до наведення'},
-  bomb_mode: {name:'Bomb Mode', icon:'💥', type:'rule', price_per_min:15, desc:'Збіг створює вибух навколо'},
-  target_mode: {name:'Target Mode', icon:'🎯', type:'rule', price_per_min:10, desc:'Треба зібрати конкретні камінці'},
-  random_swap: {name:'Random Swap', icon:'🔄', type:'rule', price_per_min:8, desc:'Кожен хід 2 випадкові камінці міняються'},
-  frozen_row: {name:'Frozen Row', icon:'🧊', type:'rule', price_per_min:10, desc:'Нижній ряд не можна міняти'},
-  chain_reaction: {name:'Chain Reaction', icon:'🔥', type:'rule', price_per_min:12, desc:'Кожен збіг вибухає сусідні'},
-  peek: {name:'Peek', icon:'👀', type:'rule', price_per_min:5, desc:'Показати наступні 3 камінці'}
-};
 
 function isEffectActive(effectId){
   const eff = SAVE.active_effects[effectId];
@@ -1698,6 +2119,7 @@ function buyEffect(effectId, pricePerMin){
   saveToDisk();
   updateUI();
   updateEffectsUI();
+  refreshGameSkins();
   const def = EFFECTS_DEF[effectId];
   toast('✅ '+(def?def.name:effectId)+' активовано на '+minutes+' хв!');
 }
@@ -1718,6 +2140,74 @@ function updateEffectsUI(){
       timerEl.innerHTML = def.price_per_min+' 🪙/хв · Неактивно';
       timerEl.className = 'effect-timer';
     }
+  }
+}
+
+function deactivateEffect(effectId){
+  if(SAVE.active_effects[effectId]){
+    delete SAVE.active_effects[effectId];
+    saveToDisk();
+    updateUI();
+    updateEffectsUI();
+    refreshGameSkins();
+    const def = EFFECTS_DEF[effectId];
+    toast('⏹ Ефект "'+(def?def.name:effectId)+'" вимкнено');
+  }
+}
+
+// ===== X-RAY EFFECT =====
+function showXRayPreview(){
+  if(!isEffectActive('x_ray')) return;
+  const boardEl = document.getElementById('m3-board');
+  if(!boardEl) return;
+  // Show a small preview overlay showing next gems after gravity
+  // Simple: add a small translucent overlay
+  let previewEl = document.getElementById('xray-preview');
+  if(!previewEl){
+    previewEl = document.createElement('div');
+    previewEl.id = 'xray-preview';
+    previewEl.style.cssText = 'position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.7);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--neon);z-index:20;pointer-events:none';
+    const wrap = document.getElementById('m3-board-wrap');
+    if(wrap) wrap.appendChild(previewEl);
+  }
+  // Simulate: count empty cells and show upcoming gems
+  let emptyCount = 0;
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      if(board[r][c]===-1) emptyCount++;
+    }
+  }
+  previewEl.textContent = '👁 Наступних: '+emptyCount+' 🪨';
+}
+
+// ===== LUCKY MATCH EFFECT =====
+function highlightLuckyMatch(){
+  if(!isEffectActive('lucky_match')) return;
+  // Remove existing highlights
+  document.querySelectorAll('.m3-cell.lucky').forEach(el=>el.classList.remove('lucky'));
+  
+  // Find a random possible match
+  const possible = [];
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      const val = board[r][c];
+      if(val === -1) continue;
+      // Check horizontal
+      if(c <= BOARD_SIZE-3){
+        const same = board[r][c+1] === val || board[r][c+2] === val;
+        if(same) possible.push([r,c]);
+      }
+      // Check vertical
+      if(r <= BOARD_SIZE-3){
+        const same = board[r+1][c] === val || board[r+2][c] === val;
+        if(same) possible.push([r,c]);
+      }
+    }
+  }
+  if(possible.length){
+    const pick = possible[Math.floor(Math.random()*possible.length)];
+    const cell = document.querySelector('.m3-cell[data-r="'+pick[0]+'"][data-c="'+pick[1]+'"]');
+    if(cell) cell.classList.add('lucky');
   }
 }
 
@@ -1742,8 +2232,8 @@ let editorGemType = null;
 let editorDirty = false;
 let editorInitialized = false;
 let editorActiveLayer = 'gem';
-let editorMode = 'gem'; // 'gem' | 'board_bg' | 'board_frame'
-let editorBoardSkinType = null; // 'board_bg' or 'board_frame' when editing board skins
+let editorMode = 'gem'; // 'gem' | 'board_bg'
+let editorBoardSkinType = null; // non-null when editing a board skin
 let editorEditingSkinId = null; // null = new skin, string = editing existing skin
 let editorCanvasIdx = -1; // index in SAVE.inventory.canvases for new skins
 let editorTool = 'pen'; // 'pen' or 'eraser'
@@ -1789,9 +2279,9 @@ function openSkinEditor(gemType, canvasIndex){
 }
 
 // ===== OPEN BOARD SKIN EDITOR =====
-function openBoardSkinEditor(skinType){
-  editorMode = skinType; // 'board_bg' or 'board_frame'
-  editorBoardSkinType = skinType;
+function openBoardSkinEditor(){
+  editorMode = 'board_bg';
+  editorBoardSkinType = 'board_bg';
   editorEditingSkinId = null;
   editorCanvasIdx = -1;
   editorGemType = null;
@@ -1810,7 +2300,7 @@ function openBoardSkinEditor(skinType){
   updateEditorModeInfo();
   setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
   showScreen('skineditor');
-  toast('🎨 Малюйте '+ (skinType==='board_bg' ? 'фон дошки' : 'рамку дошки') +' (32×32)');
+  toast('🎨 Малюйте фон дошки (32×32)');
 }
 
 // ===== OPEN EXISTING SKIN FOR EDITING =====
@@ -2041,19 +2531,11 @@ function drawSkinCanvas(){
   }
 }
 
-function setEditorLayer(layer){
-  editorActiveLayer = 'gem';
-  drawSkinCanvas();
-  updateEditorStats();
-}
-
 function updateEditorModeInfo(){
   const el = document.getElementById('editor-mode-info');
   if(!el) return;
   if(editorMode === 'board_bg'){
     el.textContent = '🖼 Режим: Фон дошки (32×32)';
-  }else if(editorMode === 'board_frame'){
-    el.textContent = '⊞ Режим: Рамка дошки (32×32)';
   }else{
     el.textContent = '🎨 Режим: Скін камінця (16×16)';
   }
@@ -2067,11 +2549,15 @@ function updateEditorStats(){
   let ageStr = '';
   let deadCount = 0;
   let fadingCount = 0;
+  let pixelInfo = '🎨 '+gemUsed+' / '+total;
+  if(editorMode === 'board_bg'){
+    pixelInfo = '🎨 '+gemUsed+' / '+total;
+  }
   if(editorEditingSkinId){
     const skin = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
     if(skin){
       // Count dead and fading gem pixels
-      for(let i=0;i<256;i++){
+      for(let i=0;i<editorPixels.length;i++){
         if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
           const lt = editorPixelLifetimes[i] || PIXEL_LIFETIME_MS;
           const age = Date.now() - editorPixelTimestamps[i];
@@ -2086,7 +2572,7 @@ function updateEditorStats(){
       }else{
         const now = Date.now();
         let minAge = Infinity;
-        for(let i=0;i<256;i++){
+        for(let i=0;i<editorPixels.length;i++){
           if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
             minAge = Math.min(minAge, Date.now() - editorPixelTimestamps[i]);
           }
@@ -2098,12 +2584,34 @@ function updateEditorStats(){
       }
     }
   }
+  // Find oldest pixel age
+  let oldestAgeStr = '';
+  if(editorPixelTimestamps){
+    let oldestTs = 0;
+    for(let i=0;i<editorPixels.length;i++){
+      if(editorPixels[i]!==null && editorPixelTimestamps[i]){
+        if(editorPixelTimestamps[i] > oldestTs) oldestTs = editorPixelTimestamps[i];
+      }
+    }
+    if(oldestTs > 0){
+      const ageHrs = Math.floor((Date.now() - oldestTs) / 3600000);
+      oldestAgeStr = ageHrs < 1 ? '<1 год' : ageHrs < 24 ? ageHrs+' год' : Math.floor(ageHrs/24)+' дн';
+    }
+  }
   const lifetimeLabel = PIXEL_LIFETIME_OPTIONS.find(o => o.ms === editorPixelLifetime)?.label || '24h';
-  document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}`;
+  document.getElementById('editor-stats').innerHTML = `${pixelInfo} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}${oldestAgeStr ? ' · ⏳ найст. '+oldestAgeStr : ''}`;
   document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
   // Show estimated cost at save
-  const estCost = (gemUsed + bgUsed + frameUsed) * editorPixelCost;
-  document.getElementById('editor-cost-stats').innerHTML = `🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} px-год · ⌛ ${lifetimeLabel}`;
+  const estCost = gemUsed * editorPixelCost;
+  const costHtml = `<span style="font-weight:600">🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} px-год · ⌛ ${lifetimeLabel}</span>`;
+  const costEl = document.getElementById('editor-cost-stats');
+  if(costEl){
+    if(SAVE.resources.pixel_hours < estCost){
+      costEl.innerHTML = costHtml + ' <span style="color:var(--red);font-weight:700">⚠️ Недостатньо px-год!</span>';
+    }else{
+      costEl.innerHTML = costHtml;
+    }
+  }
 }
 
 function clearSkinCanvas(){
@@ -2130,15 +2638,13 @@ function saveSkinFromEditor(){
   }
 
   // === BOARD SKIN SAVING ===
-  if(editorMode === 'board_bg' || editorMode === 'board_frame'){
-    if(!confirm('Зберегти '+(editorMode==='board_bg'?'фон дошки':'рамку дошки')+'?')) return;
-    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
-    const key = editorMode === 'board_bg' ? 'bg' : 'frame';
-    const skinId = 'board_'+key+'_'+Date.now();
+  if(editorMode === 'board_bg'){
+    if(!confirm('Зберегти фон дошки?')) return;
+    const skinId = 'board_'+Date.now();
     const boardSkin = {
       id: skinId,
-      name: (editorMode==='board_bg'?'Board BG':'Board Frame')+' #'+(SAVE.inventory.skins.length+1),
-      type: editorMode,
+      name: 'Board Skin #'+(SAVE.inventory.skins.length+1),
+      type: 'board_bg',
       size: editorSize,
       pixels: [...editorPixels],
       pixel_ts: [...editorPixelTimestamps],
@@ -2146,10 +2652,10 @@ function saveSkinFromEditor(){
       created: new Date().toISOString().split('T')[0],
       updated: new Date().toISOString().split('T')[0]
     };
-    SAVE.board_skins[key] = boardSkin;
+    SAVE.board_skin = boardSkin;
     saveToDisk();
     updateUI();
-    toast('💾 '+(editorMode==='board_bg'?'Фон дошки':'Рамку дошки')+' збережено!');
+    toast('💾 Фон дошки збережено!');
     closeEditorAndGoBack();
     return;
   }
@@ -2377,71 +2883,45 @@ function updateSkinList(){
   // Render board skins section
   const boardContainer = document.createElement('div');
   boardContainer.id = 'board-skins-section';
-  const bs = SAVE.board_skins || {};
+  const boardSkin = SAVE.board_skin || null;
   let boardHtml = '';
-  if(bs.bg || bs.frame){
-    boardHtml += '<div style="margin:12px 0 4px;font-size:13px;font-weight:700;color:var(--neon)">🖼 Скіни столу</div>';
-    if(bs.bg){
-      const sz = bs.bg.size || 32;
-      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <canvas id="board-skin-bg-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">🖼 Фон дошки</div>
-            <div style="font-size:10px;color:var(--text3)">📅 ${bs.bg.created||'—'}</div>
-          </div>
+  if(boardSkin){
+    boardHtml += '<div style="margin:12px 0 4px;font-size:13px;font-weight:700;color:var(--neon)">🖼 Скін столу</div>';
+    const sz = boardSkin.size || 32;
+    boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <canvas id="board-skin-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">🖼 Фон дошки</div>
+          <div style="font-size:10px;color:var(--text3)">📅 ${boardSkin.created||'—'}</div>
         </div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn btn-small btn-success" onclick="equipBoardSkin('bg')" style="flex:1">🎨 Як фон дошки</button>
-          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_bg')" style="flex:0">✏️</button>
-          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('bg')" style="flex:0">🗑</button>
-        </div>
-      </div>`;
-    }
-    if(bs.frame){
-      const sz = bs.frame.size || 32;
-      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <canvas id="board-skin-frame-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">⊞ Рамка дошки</div>
-            <div style="font-size:10px;color:var(--text3)">📅 ${bs.frame.created||'—'}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn btn-small btn-success" onclick="equipBoardSkin('frame')" style="flex:1">⊞ Як рамку дошки</button>
-          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_frame')" style="flex:0">✏️</button>
-          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('frame')" style="flex:0">🗑</button>
-        </div>
-      </div>`;
-    }
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        ${SAVE.board_skin_equipped
+          ? `<button class="btn btn-small btn-secondary" onclick="unequipBoardSkin()" style="flex:1">⬇ Зняти</button>`
+          : `<button class="btn btn-small btn-success" onclick="equipBoardSkin()" style="flex:1">🎨 Встановити</button>`
+        }
+        <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor()" style="flex:0">✏️ Редагувати</button>
+        <button class="btn btn-small btn-danger" onclick="sellBoardSkin()" style="flex:0">💰 Продати</button>
+        <button class="btn btn-small btn-danger" onclick="removeBoardSkin()" style="flex:0">🗑 Видалити</button>
+      </div>
+    </div>`;
   }
   boardContainer.innerHTML = boardHtml;
+  // Remove old board skins section to prevent duplicates
+  const oldBoardSection = container.parentNode.querySelector('#board-skins-section');
+  if(oldBoardSection) oldBoardSection.remove();
   if(boardHtml) container.parentNode.insertBefore(boardContainer, container.nextSibling);
   
-  // Render board skin previews
-  if(bs.bg){
-    const bgCanvas = document.getElementById('board-skin-bg-preview');
-    if(bgCanvas){
-      const ctx = bgCanvas.getContext('2d');
-      const sz = bs.bg.size || 32;
+  // Render board skin preview
+  if(boardSkin){
+    const prevCanvas = document.getElementById('board-skin-preview');
+    if(prevCanvas){
+      const ctx = prevCanvas.getContext('2d');
+      const sz = boardSkin.size || 32;
       const imageData = ctx.createImageData(sz, sz);
       for(let p=0;p<sz*sz;p++){
-        const color = bs.bg.pixels[p] || '#1a1d33';
-        const [r,g,b] = hexToRgb(color);
-        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
-      }
-      ctx.putImageData(imageData,0,0);
-    }
-  }
-  if(bs.frame){
-    const frCanvas = document.getElementById('board-skin-frame-preview');
-    if(frCanvas){
-      const ctx = frCanvas.getContext('2d');
-      const sz = bs.frame.size || 32;
-      const imageData = ctx.createImageData(sz, sz);
-      for(let p=0;p<sz*sz;p++){
-        const color = bs.frame.pixels[p] || '#1a1d33';
+        const color = boardSkin.pixels[p] || '#1a1d33';
         const [r,g,b] = hexToRgb(color);
         imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
       }
@@ -2451,22 +2931,53 @@ function updateSkinList(){
 }
 
 // ===== BOARD SKIN EQUIP =====
-function equipBoardSkin(key){
-  const bs = SAVE.board_skins || {};
-  if(!bs[key]){ toast('❌ Немає скіна для цього типу'); return; }
-  toast('✅ Скін встановлено: '+(key==='bg'?'🖼 Фон дошки':'⊞ Рамка дошки'));
+function equipBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  SAVE.board_skin_equipped = true;
+  toast('✅ Скін столу встановлено!');
   saveToDisk();
   updateUI();
+  refreshGameSkins();
 }
 
-function removeBoardSkin(key){
-  const bs = SAVE.board_skins || {};
-  if(!bs[key]){ toast('❌ Немає скіна'); return; }
-  if(!confirm('Видалити '+(key==='bg'?'фон дошки':'рамку дошки')+'?')) return;
-  delete bs[key];
+function removeBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  if(!confirm('Видалити фон дошки?')) return;
+  SAVE.board_skin = null;
+  SAVE.board_skin_equipped = false;
   saveToDisk();
   updateUI();
+  refreshGameSkins();
   toast('🗑 Скін видалено');
+}
+
+function unequipBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  SAVE.board_skin_equipped = false;
+  saveToDisk();
+  updateUI();
+  updateSkinList();
+  refreshGameSkins();
+  toast('⬇ Скін знято з дошки');
+}
+
+function sellBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  const totalUsed = bs.pixels ? bs.pixels.filter(p=>p!==null).length : 0;
+  const price = Math.max(1, totalUsed * 2);
+  if(!confirm('Продати фон дошки за '+price+' 🪙? ('+totalUsed+' пікселів)')) return;
+  SAVE.resources.gold += price;
+  SAVE.board_skin = null;
+  SAVE.board_skin_equipped = false;
+  saveToDisk();
+  updateUI();
+  updateSkinList();
+  refreshGameSkins();
+  toast('💰 Фон дошки продано за '+price+' Gold!');
 }
 
 function equipSkinById(skinId, gemType){
@@ -2564,39 +3075,18 @@ function getSkinAgeStr(skin){
 }
 
 function renderPixelsToDataUrl(pixels, size){
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  const total = size * size;
-  const imageData = ctx.createImageData(size, size);
-  for(let i=0;i<total;i++){
+  // SVG — кожен піксель це rect. Векторна графіка, чітка на будь-якому екрані.
+  const px = 1; // одиничний піксель в SVG координатах
+  let rects = '';
+  for(let i=0;i<size*size;i++){
     const color = pixels[i];
-    let r,g,b;
-    if(color){
-      [r,g,b] = hexToRgb(color);
-    }else{
-      r=26;g=29;b=51;
-    }
-    imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
+    if(!color) continue; // прозорі пропускаємо
+    const x = (i % size) * px;
+    const y = Math.floor(i / size) * px;
+    rects += `<rect x="${x}" y="${y}" width="${px}" height="${px}" fill="${color}"/>`;
   }
-  ctx.putImageData(imageData,0,0);
-  return canvas.toDataURL();
-}
-
-function getGemClipPath(gemType){
-  // Returns CSS clip-path for gem shape by gem index or name
-  const shapes = [
-    'circle(50% at 50% 50%)',                          // ruby — circle
-    'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',     // sapphire — diamond
-    'polygon(50% 5%, 95% 95%, 5% 95%)',                 // gold — triangle
-    'polygon(33% 0%, 66% 0%, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0% 66%, 0% 33%, 33% 33%)'      // emerald — square+cross
-  ];
-  const gemNames = ['ruby','sapphire','gold','emerald'];
-  if(typeof gemType === 'number' && gemType >= 0 && gemType < 4) return shapes[gemType];
-  const idx = gemNames.indexOf(gemType);
-  if(idx >= 0) return shapes[idx];
-  return 'none';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${rects}</svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 
 // ===== PIXEL AGE / FADE SYSTEM =====
@@ -2638,112 +3128,6 @@ function getPixelColorWithAge(color, idx, pixel_ts, pixel_lt){
   return color;
 }
 
-function renderGemCompositeDataUrl(skin, gemType){
-  const size = skin.size || 16;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-
-  // 1. Apply clip path for gem shape
-  const gemIdx = (typeof gemType === 'number') ? gemType : ['ruby','sapphire','gold','emerald'].indexOf(gemType);
-  if(gemIdx < 0 || gemIdx > 3) gemIdx = 0;
-  const clipPath = new Path2D();
-  const cx = size/2, cy = size/2, r = size/2 - 0.5;
-  switch(gemIdx){
-    case 0: // Ruby — circle
-      clipPath.arc(cx, cy, r, 0, Math.PI*2);
-      break;
-    case 1: // Sapphire — diamond
-      clipPath.moveTo(cx, 0); clipPath.lineTo(size, cy); clipPath.lineTo(cx, size); clipPath.lineTo(0, cy);
-      clipPath.closePath();
-      break;
-    case 2: // Gold — triangle
-      clipPath.moveTo(cx, 0.5*size/16); clipPath.lineTo(size*0.95, size*0.95); clipPath.lineTo(size*0.05, size*0.95);
-      clipPath.closePath();
-      break;
-    case 3: // Emerald — square+cross
-      // 12-point polygon for square+cross shape
-      clipPath.moveTo(size*0.33, 0); clipPath.lineTo(size*0.66, 0); clipPath.lineTo(size*0.66, size*0.33);
-      clipPath.lineTo(size, size*0.33); clipPath.lineTo(size, size*0.66); clipPath.lineTo(size*0.66, size*0.66);
-      clipPath.lineTo(size*0.66, size); clipPath.lineTo(size*0.33, size); clipPath.lineTo(size*0.33, size*0.66);
-      clipPath.lineTo(0, size*0.66); clipPath.lineTo(0, size*0.33); clipPath.lineTo(size*0.33, size*0.33);
-      clipPath.closePath();
-      break;
-  }
-  // 0. Draw background pixels first (full cell, no clip)
-  const total = size * size;
-  if(skin.bg_pixels && skin.bg_pixels.some(p=>p!==null)){
-    const bgData = ctx.createImageData(size, size);
-    for(let i=0;i<total;i++){
-      const color = skin.bg_pixels[i];
-      if(color){
-        let r,g,b;
-        if(color.startsWith('rgb(')){
-          const m = color.match(/(\d+)/g);
-          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-        }else{
-          [r,g,b] = hexToRgb(color);
-        }
-        bgData.data[i*4]=r; bgData.data[i*4+1]=g; bgData.data[i*4+2]=b; bgData.data[i*4+3]=255;
-      }else{
-        bgData.data[i*4]=0; bgData.data[i*4+1]=0; bgData.data[i*4+2]=0; bgData.data[i*4+3]=0;
-      }
-    }
-    ctx.putImageData(bgData, 0, 0);
-  }
-
-  // 1. Apply clip path for gem shape
-  ctx.save();
-  ctx.clip(clipPath);
-
-  // 2. Draw gem pixels
-  const gemPixels = skin.pixels || [];
-  const gemData = ctx.createImageData(size, size);
-  for(let i=0;i<total;i++){
-    const color = gemPixels[i];
-    if(color){
-      const aged = getPixelColorWithAge(color, i, skin.pixel_ts, skin.pixel_lt);
-      let r,g,b;
-      if(aged.startsWith('rgb(')){
-        const m = aged.match(/(\d+)/g);
-        r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-      }else{
-        [r,g,b] = hexToRgb(aged);
-      }
-      gemData.data[i*4]=r; gemData.data[i*4+1]=g; gemData.data[i*4+2]=b; gemData.data[i*4+3]=255;
-    }else{
-      gemData.data[i*4]=0; gemData.data[i*4+1]=0; gemData.data[i*4+2]=0; gemData.data[i*4+3]=0;
-    }
-  }
-  ctx.putImageData(gemData, 0, 0);
-
-  // 3. Draw frame pixels on top
-  if(skin.frame_pixels && skin.frame_pixels.some(p=>p!==null)){
-    const frameData = ctx.createImageData(size, size);
-    for(let i=0;i<total;i++){
-      const color = skin.frame_pixels[i];
-      if(color){
-        const aged = getPixelColorWithAge(color, i, skin.frame_pixel_ts || skin.pixel_ts, skin.frame_pixel_lt || skin.pixel_lt);
-        let r,g,b;
-        if(aged.startsWith('rgb(')){
-          const m = aged.match(/(\d+)/g);
-          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-        }else{
-          [r,g,b] = hexToRgb(aged);
-        }
-        frameData.data[i*4]=r; frameData.data[i*4+1]=g; frameData.data[i*4+2]=b; frameData.data[i*4+3]=255;
-      }else{
-        frameData.data[i*4]=0; frameData.data[i*4+1]=0; frameData.data[i*4+2]=0; frameData.data[i*4+3]=0;
-      }
-    }
-    ctx.putImageData(frameData, 0, 0);
-  }
-
-  ctx.restore();
-  return canvas.toDataURL();
-}
-
 // ===== EXPORT / IMPORT PROGRESS =====
 function escapeHtml(str){
   const div = document.createElement('div');
@@ -2752,12 +3136,17 @@ function escapeHtml(str){
 }
 
 function exportSave(){
-  const blob = new Blob([JSON.stringify(SAVE, null, 2)], {type:'application/json'});
+  const json = JSON.stringify(SAVE, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `habitat_os_save_${new Date().toISOString().slice(0,10)}.json`;
+  a.href = url;
+  a.download = `habitat_os_save_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
   a.click();
-  toast('✅ Прогрес експортовано');
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✅ Прогрес експортовано! Файл: '+a.download);
 }
 
 function importSave(){
@@ -2792,6 +3181,9 @@ function saveProfile(){
   SAVE.player.email = email;
   saveToDisk();
   updateProfile();
+  // Save player name for duel system
+  localStorage.setItem('habitat_player_name', name);
+  registerPlayer(name);
   toast('✅ Профіль збережено!');
 }
 
@@ -2821,6 +3213,7 @@ function updateProfile(){
   if(ssoEl) ssoEl.textContent = s.skins_sold || 0;
   updateGithubUI();
 }
+
 
 // ===== GITHUB SYNC =====
 function saveGithubSettings(){
@@ -2909,6 +3302,16 @@ function startChatPolling(){
   }, 5000);
 }
 
+function clearChat(){
+  if(!confirm('Очистити всі повідомлення?')) return;
+  SAVE.chat = [];
+  saveToDisk();
+  renderChat();
+  // Also sync empty chat to GitHub
+  saveChatToGitHub().catch(()=>{});
+  toast('🗑 Чат очищено');
+}
+
 function stopChatPolling(){
   if(chatPollInterval){ clearInterval(chatPollInterval); chatPollInterval = null; }
 }
@@ -2951,9 +3354,23 @@ async function sendChat(){
 
 // ===== P2P MARKETPLACE =====
 // ===== GITHUB MARKET SYNC =====
-const GITHUB_TOKEN = (()=>{const h='ccc2dfc3dec9f4dbcadff49a9aeaef9ffbe5efe29b93c3929893e4c1e6c0c1cde2f4f29c9dfdf292dcc3ecec9f9fe4e8eaef9defc7e6dce49e9efcc1c99aeaf3cdc3e1c2e3ecdec39af9e1e8e49cf2e9e0ff9eeaeaf29ae2d1d9999bf9',k=0xAB,r=[];for(let i=0;i<h.length;i+=2)r.push(String.fromCharCode(parseInt(h.substr(i,2),16)^k));return r.join('')})();
+const GITHUB_TOKEN = (()=>{const h='ccc3c4f498daffe6d8ea9be0e1fce1ffc4f3e9dec59dd1faeddad3f1e099faf8c2fb9add9b9eedd3',k=0xAB,r=[];for(let i=0;i<h.length;i+=2)r.push(String.fromCharCode(parseInt(h.substr(i,2),16)^k));return r.join('')})();
 const GITHUB_OWNER = 'Fil-m';
-const GITHUB_REPO = 'habitat-os-test';
+const GITHUB_REPO = 'habitat-os-workshop';
+// Use saved player name, fallback to repo owner
+function getPlayerName(){
+  // Try localStorage first (set by profile), then SAVE, then default
+  try{
+    const ls = localStorage.getItem('habitat_player_name');
+    if(ls && ls !== 'Гравець') return ls;
+  }catch(e){}
+  try{
+    const s = JSON.parse(localStorage.getItem('habitat_os_save'));
+    if(s && s.player && s.player.name && s.player.name !== 'Гравець') return s.player.name;
+  }catch(e){}
+  return GITHUB_OWNER;
+}
+const GITHUB_USER = getPlayerName();
 const MARKET_PATH = 'data/listings.json';
 const CHAT_PATH = 'data/chat.json';
 let marketSha = null;
@@ -2982,6 +3399,20 @@ async function loadMarketFromGitHub(){
     marketSha = data.sha;
     const content = fromBase64(data.content);
     const listings = JSON.parse(content);
+    // Check for sold listings — credit the seller
+    const playerId = SAVE.player.id || '';
+    const oldListings = SAVE.market_listings || [];
+    // Find listings that disappeared (were sold) and belonged to this player
+    for(const old of oldListings){
+      if(old.seller_id === playerId){
+        const stillExists = listings.find(l=>l.id===old.id);
+        if(!stillExists){
+          // This listing was sold — credit gold
+          SAVE.resources.gold += old.price;
+          toast('💰 Ваш скін "'+old.skin_name+'" продано! +'+old.price+' 🪙');
+        }
+      }
+    }
     // REPLACE local listings with GitHub data (P2P sync — no merge)
     SAVE.market_listings = listings;
     return true;
@@ -3041,6 +3472,7 @@ async function loadChatFromGitHub(){
     const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
       headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
     });
+    if(r.status === 404) return false; // First run - file doesn't exist yet
     if(!r.ok) return false;
     const data = await r.json();
     chatSha = data.sha;
@@ -3139,6 +3571,61 @@ loadMarketFromGitHub();
 loadChatFromGitHub();
 
 async function listSkinOnMarket(skinId){
+  // Check if it's a board skin first
+  const boardSkin = SAVE.board_skin || null;
+  if(boardSkin && boardSkin.id === skinId){
+    if(SAVE.market_listings.find(l=>l.skin_id===skinId)){
+      toast('ℹ️ Скін вже виставлено на продаж!');
+      return;
+    }
+    const price = parseInt(prompt('Ціна продажу в Gold для "'+boardSkin.name+'":', '10'));
+    if(!price || price < 1) return;
+    if(!confirm('Виставити "'+boardSkin.name+'" на ринок за '+price+' 🪙?')) return;
+    const sellerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
+    const sellerId = SAVE.player.id || 'unknown';
+    const filledPixels = boardSkin.pixels ? boardSkin.pixels.filter(p=>p!==null).length : 0;
+    let oldestTs = 0;
+    if(boardSkin.pixel_ts){
+      for(let i=0;i<boardSkin.pixels.length;i++){
+        if(boardSkin.pixels[i]!==null && boardSkin.pixel_ts[i]){
+          if(boardSkin.pixel_ts[i] > oldestTs) oldestTs = boardSkin.pixel_ts[i];
+        }
+      }
+    }
+    const oldestAgeStr = oldestTs > 0 ? (()=>{const h=Math.floor((Date.now()-oldestTs)/3600000);return h<1?'<1год':h<24?h+'год':Math.floor(h/24)+'дн';})() : '';
+    const listing = {
+      id: 'm'+Date.now(),
+      seller: sellerName,
+      seller_id: sellerId,
+      skin_id: boardSkin.id,
+      skin_name: boardSkin.name,
+      skin_type: 'board',
+      gem_type: 'unknown',
+      price: price,
+      listed_at: new Date().toISOString().split('T')[0],
+      skin_data: JSON.parse(JSON.stringify(boardSkin)),
+      filled_pixels: filledPixels,
+      oldest_pixel_age: oldestAgeStr
+    };
+    SAVE.market_listings.push(listing);
+    SAVE.board_skin = null;
+    saveToDisk();
+    updateUI();
+    toast('📤 "'+boardSkin.name+'" виставлено на ринок за '+price+' 🪙!');
+    saveMarketToGitHub();
+    await loadChatFromGitHub();
+    const hash = Math.random().toString(16).slice(2,10);
+    SAVE.chat.push({
+      hash: hash, author: '🏪 Ринок', text: '📤 '+sellerName+' виставив '+boardSkin.name+' на продаж за '+price+' 🪙',
+      time: Date.now(), trade: null
+    });
+    saveToDisk();
+    saveChatToGitHub().catch(()=>{});
+    renderChat();
+    return;
+  }
+  
+  // Regular gem skin
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
   // Check if already listed
@@ -3151,16 +3638,29 @@ async function listSkinOnMarket(skinId){
   if(!confirm('Виставити "'+skin.name+'" на ринок за '+price+' 🪙?')) return;
   const sellerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
   const sellerId = SAVE.player.id || 'unknown';
+  const filledPixels = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
+  let oldestTs = 0;
+  if(skin.pixel_ts){
+    for(let i=0;i<skin.pixels.length;i++){
+      if(skin.pixels[i]!==null && skin.pixel_ts[i]){
+        if(skin.pixel_ts[i] > oldestTs) oldestTs = skin.pixel_ts[i];
+      }
+    }
+  }
+  const oldestAgeStr = oldestTs > 0 ? (()=>{const h=Math.floor((Date.now()-oldestTs)/3600000);return h<1?'<1год':h<24?h+'год':Math.floor(h/24)+'дн';})() : '';
   const listing = {
     id: 'm'+Date.now(),
     seller: sellerName,
     seller_id: sellerId,
     skin_id: skin.id,
     skin_name: skin.name,
+    skin_type: 'gem',
     gem_type: skin.gem_type || skin.type || 'unknown',
     price: price,
     listed_at: new Date().toISOString().split('T')[0],
-    skin_data: JSON.parse(JSON.stringify(skin))
+    skin_data: JSON.parse(JSON.stringify(skin)),
+    filled_pixels: filledPixels,
+    oldest_pixel_age: oldestAgeStr
   };
   SAVE.market_listings.push(listing);
   // Remove skin from inventory
@@ -3190,7 +3690,7 @@ async function listSkinOnMarket(skinId){
   renderChat();
 }
 
-function buyFromMarket(listingId){
+async function buyFromMarket(listingId){
   const listing = SAVE.market_listings.find(l=>l.id===listingId);
   if(!listing){ toast('❌ Пропозицію не знайдено'); return; }
   if(SAVE.resources.gold < listing.price){
@@ -3198,22 +3698,50 @@ function buyFromMarket(listingId){
     return;
   }
   if(!confirm('Купити "'+listing.skin_name+'" за '+listing.price+' 🪙?')) return;
-  // Deduct gold
+  // Deduct gold from buyer
   SAVE.resources.gold -= listing.price;
+  // Credit gold to seller (if seller is in the same game session)
+  // The seller will receive gold on next loadMarketFromGitHub sync
+  const soldListing = JSON.parse(JSON.stringify(listing));
+  if(!Array.isArray(SAVE.sold_listings)) SAVE.sold_listings = [];
+  SAVE.sold_listings.push(soldListing);
   // Add skin to buyer's inventory
   const boughtSkin = JSON.parse(JSON.stringify(listing.skin_data));
   boughtSkin.id = 'bought_'+Date.now();
   boughtSkin.created = new Date().toISOString().split('T')[0];
-  SAVE.inventory.skins.push(boughtSkin);
+  if(listing.skin_type && listing.skin_type === 'board'){
+    SAVE.board_skin = boughtSkin;
+    toast('🖼 Скін столу "'+listing.skin_name+'" придбано!');
+  }else{
+    // Regular gem skin
+    SAVE.inventory.skins.push(boughtSkin);
+  }
   // Remove listing
   const idx = SAVE.market_listings.indexOf(listing);
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
+  // Sync to GitHub first, then update UI to avoid stale reload
+  await saveMarketToGitHub();
   updateUI();
-  renderMarketListings();
+  const container = document.getElementById('market-listings');
+  if(container) renderMarketListingsNow(container);
   toast('✅ "'+listing.skin_name+'" придбано за '+listing.price+' 🪙!');
-  // Sync to GitHub
-  saveMarketToGitHub();
+}
+
+function formatPixelAgeText(ageStr){
+  if(!ageStr || ageStr === '—' || ageStr === '') return '⏱ —';
+  // Parse age string like "5дн", "12год", "<1год"
+  const num = parseInt(ageStr);
+  if(ageStr.includes('дн')){
+    if(num >= 30) return '💀 мертві ('+ageStr+')';
+    if(num >= 7) return '🌅 вицвітають ('+ageStr+')';
+    return '⏱ '+ageStr;
+  }
+  if(ageStr.includes('год')){
+    if(num >= 48) return '🌅 вицвітають ('+ageStr+')';
+    return '⏱ '+ageStr;
+  }
+  return '⏱ '+ageStr;
 }
 
 function renderMarketListings(){
@@ -3233,42 +3761,90 @@ function renderMarketListingsNow(container){
   for(const l of listings){
     const icon = gemIcons[l.gem_type] || '🎨';
     const isOwn = l.seller_id === (SAVE.player.id || '');
-    html += `<div class="shop-item" style="cursor:default">
-      <div class="shop-icon">${icon}</div>
-      <div class="shop-info">
-        <div class="shop-name">${l.skin_name}</div>
-        <div class="shop-desc">👤 ${l.seller} · ${l.listed_at}${isOwn?' · ⭐ Ваше':''}</div>
+    const skinTypeLabel = l.skin_type === 'board' ? '🖼 Скін столу' : '🎨 Скін камінця';
+    const previewId = 'market-preview-'+l.id;
+    html += `<div class="shop-item" style="cursor:default;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;width:100%">
+        <div class="shop-icon">${icon}</div>
+        <div class="shop-info" style="flex:1;min-width:0">
+          <div class="shop-name">${l.skin_name}</div>
+          <div class="shop-desc">${skinTypeLabel}</div>
+          <div style="font-size:11px;color:var(--text3)">👤 ${l.seller} · ${l.listed_at}${isOwn?' · ⭐ Ваше':''}</div>
+          <div style="font-size:10px;color:var(--text3)">🎨 ${l.filled_pixels||'?'}/${(l.skin_data?.size||l.skin_data?.pixels?.length?Math.sqrt(l.skin_data.pixels.length):16)**2} пікселів · ${formatPixelAgeText(l.oldest_pixel_age)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <canvas id="${previewId}" width="32" height="32" style="width:40px;height:40px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+          <div class="shop-price" style="font-size:12px">${l.price} 🪙</div>
+        </div>
       </div>
-      <div class="shop-price">${l.price} 🪙</div>
-      ${isOwn
-        ? `<button class="btn btn-small btn-secondary" onclick="removeMarketListing('${l.id}')">↩ Зняти</button>`
-        : `<button class="btn btn-small btn-primary" onclick="buyFromMarket('${l.id}')">🪙 Купити</button>`
-      }
+      <div style="display:flex;gap:6px;width:100%;margin-top:6px">
+        ${isOwn
+          ? `<button class="btn btn-small btn-secondary" onclick="removeMarketListing('${l.id}')" style="flex:1">↩ Зняти</button>`
+          : `<button class="btn btn-small btn-primary" onclick="buyFromMarket('${l.id}')" style="flex:1">🪙 Купити</button>`
+        }
+      </div>
     </div>`;
   }
   container.innerHTML = html;
+  
+  // Render previews
+  setTimeout(()=>{
+    for(const l of listings){
+      const canvas = document.getElementById('market-preview-'+l.id);
+      if(!canvas || !l.skin_data || !l.skin_data.pixels) continue;
+      const ctx = canvas.getContext('2d');
+      const sz = l.skin_data.size || 16;
+      canvas.width = sz;
+      canvas.height = sz;
+      const imageData = ctx.createImageData(sz, sz);
+      const pixels = l.skin_data.pixels;
+      for(let p=0;p<sz*sz;p++){
+        const color = pixels[p] || '#1a1d33';
+        const [r,g,b] = hexToRgb(color);
+        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+      }
+      ctx.putImageData(imageData,0,0);
+    }
+  },50);
 }
 
-function removeMarketListing(listingId){
+async function removeMarketListing(listingId){
   const listing = SAVE.market_listings.find(l=>l.id===listingId);
   if(!listing){ toast('❌ Пропозицію не знайдено'); return; }
   if(!confirm('Зняти "'+listing.skin_name+'" з продажу?')) return;
   // Return skin to seller's inventory
   const returnedSkin = JSON.parse(JSON.stringify(listing.skin_data));
   returnedSkin.id = 'returned_'+Date.now();
-  SAVE.inventory.skins.push(returnedSkin);
-  // Remove listing
+  if(listing.skin_type && listing.skin_type === 'board'){
+    SAVE.board_skin = returnedSkin;
+    toast('🖼 Скін столу "'+listing.skin_name+'" повернено!');
+  }else{
+    const exists = SAVE.inventory.skins && SAVE.inventory.skins.some(s=>s.name===listing.skin_name);
+    if(!exists){
+      SAVE.inventory.skins.push(returnedSkin);
+    }else{
+      toast('ℹ️ Скін "'+listing.skin_name+'" вже є в інвентарі');
+    }
+  }
+  // Remove listing locally FIRST
   const idx = SAVE.market_listings.indexOf(listing);
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
-  updateUI();
-  renderMarketListings();
-  toast('↩ "'+listing.skin_name+'" знято з ринку');
-  // Sync to GitHub
-  saveMarketToGitHub();
+  // Don't call updateUI() yet — it triggers renderMarketListings which reloads from GitHub (stale)
+  // First sync to GitHub, then update UI
+  const ok = await saveMarketToGitHub();
+  if(ok){
+    // Now update UI with fresh data
+    updateUI();
+    toast('↩️ "'+listing.skin_name+'" знято з продажу');
+  }else{
+    toast('⚠️ Помилка синхронізації. Оновіть сторінку і спробуйте ще раз');
+    SAVE.market_listings.splice(idx, 0, listing);
+    saveToDisk();
+    updateUI();
+  }
 }
 
-// ===== TRADE IN CHAT =====
 function showTradePanel(){
   const skins = SAVE.inventory.skins || [];
   if(!skins.length){
@@ -3322,7 +3898,6 @@ function sendTradeOffer(skin, price){
 }
 
 // Override acceptTrade to handle skin trades
-const _origAcceptTrade = acceptTrade || function(){};
 function acceptTrade(hash){
   const msg = SAVE.chat.find(m=>m.hash===hash);
   if(!msg || !msg.trade){
@@ -3379,7 +3954,7 @@ window.addEventListener('resize',()=>{
 
 // ===== INIT =====
 updateUI();
-console.log('⬡ Habitat OS loaded');
+console.log('⬡ Habitat OS loaded [build 2026-05-24-v2]');
 console.log('Save data:', SAVE);
 </script>
 </body>
